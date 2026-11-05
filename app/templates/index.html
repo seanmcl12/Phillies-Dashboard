@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Philadelphia Phillies</h1>
+<p><a href="{{ url_for('about') }}">About</a></p>
+<table>
+  <thead>
+    <tr>
+      {% for column in columns %}
+      <th>{{ column }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for column in columns %}
+      <td>{{ row[column] }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
