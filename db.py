@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import ssl
 
@@ -7,7 +8,19 @@ from pymysql.connections import Connection
 
 
 def _database_password() -> str:
+    password = os.environ.get("DATABASE_PASSWORD")
+    if password is not None:
+        if password:
+            return password
+        raise RuntimeError("DATABASE_PASSWORD environment variable is empty")
+
     env_path = Path(__file__).with_name(".env")
+    if not env_path.is_file():
+        raise RuntimeError(
+            "Missing DATABASE_PASSWORD environment variable and "
+            f"local credentials file {env_path}"
+        )
+
     for line in env_path.read_text().splitlines():
         key, separator, value = line.partition("=")
         if separator and key.strip() == "database-password":
