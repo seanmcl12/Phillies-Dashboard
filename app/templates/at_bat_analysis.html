@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}At-Bat Analysis | Philadelphia Phillies{% endblock %}
+
+{% block content %}
+<h2>At-Bat Analysis</h2>
+<p>Completed plate appearances by opposing team, terminal pitch type, and at-bat result.</p>
+{% if rows %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Opponent</th>
+        <th>Final pitch</th>
+        <th>At-bat result</th>
+        <th>Plate appearances</th>
+        <th>Strikeouts</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.opponent }}</td>
+        <td>{{ row.pitch_type or "Unknown" }}</td>
+        <td>{{ row.events }}</td>
+        <td>{{ row.plate_appearances }}</td>
+        <td>{{ row.strikeouts }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>No at-bat results are available for the loaded data.</p>
+{% endif %}
+{% endblock %}

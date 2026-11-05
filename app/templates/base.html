@@ -7,7 +7,13 @@
   <body>
     <header>
       <h1>Philadelphia Phillies</h1>
-      <nav><a href="{{ url_for('index') }}">Home</a> | <a href="{{ url_for('about') }}">About</a></nav>
+      <nav>
+        <a href="{{ url_for('index') }}">Home</a> |
+        <a href="{{ url_for('about') }}">About</a> |
+        <a href="{{ url_for('pitch_arsenal') }}">Pitch Arsenal</a> |
+        <a href="{{ url_for('pitch_performance') }}">Pitch Performance</a> |
+        <a href="{{ url_for('at_bat_analysis') }}">At-Bat Analysis</a>
+      </nav>
     </header>
     <main>
       {% block content %}{% endblock %}

@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generated expanded Statcast data
+phillies_pitch_data_enriched.csv

@@ -23,8 +23,7 @@ app/static/ CSS, images, chart scripts (Flask requires this name)
 New code goes in one of these. If something does not fit, tell me and we will decide together
 where it belongs.
 My data
-Source: [nflreadpy / pybaseball / soccerdata / MoneyPuck / nba_api / etc.]
-** UPDATE THIS AS WE GO CLAUDE **
+Source: pybaseball Statcast, 2025 regular-season Phillies pitching data
 You have never seen this data. Do not guess column names.
 Rules
 ● Never read, edit, print, or echo .env. If a credential ends up anywhere outside .env,
