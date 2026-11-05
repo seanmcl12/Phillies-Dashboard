@@ -23,7 +23,7 @@ def _database_password() -> str:
 
     for line in env_path.read_text().splitlines():
         key, separator, value = line.partition("=")
-        if separator and key.strip() == "database-password":
+        if separator and key.strip().lower().replace("_", "-") == "database-password":
             value = value.strip()
             if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
                 value = value[1:-1]

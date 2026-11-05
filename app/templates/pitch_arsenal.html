@@ -5,6 +5,9 @@
 {% block content %}
 <h2>Pitch Arsenal</h2>
 <p>Pitch mix, average velocity, spin, movement, and strikeout results for each Phillies pitcher.</p>
+{% if data_notice %}
+<p class="data-notice">{{ data_notice }}</p>
+{% endif %}
 {% if rows %}
 <div class="table-wrap">
   <table>

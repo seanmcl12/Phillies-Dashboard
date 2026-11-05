@@ -5,6 +5,9 @@
 {% block content %}
 <h2>At-Bat Analysis</h2>
 <p>Completed plate appearances by opposing team, terminal pitch type, and at-bat result.</p>
+{% if data_notice %}
+<p class="data-notice">{{ data_notice }}</p>
+{% endif %}
 {% if rows %}
 <div class="table-wrap">
   <table>

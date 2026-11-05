@@ -40,6 +40,49 @@ def _query_rows(query: str) -> list[dict[str, object]]:
         connection.close()
 
 
+def _pitch_data_columns() -> set[str]:
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT COLUMN_NAME
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'Phillies_Pitch_Data'
+                """
+            )
+            return {row[0].lower() for row in cursor.fetchall()}
+    finally:
+        connection.close()
+
+
+def _legacy_pitch_rollup() -> list[dict[str, object]]:
+    return _query_rows(
+        """
+        SELECT 'All pitchers (individual data unavailable)' AS player_name,
+               NULL AS pitcher,
+               `pitch_type`,
+               COUNT(*) AS pitch_count,
+               COUNT(DISTINCT CONCAT(`game_pk`, ':', `at_bat_number`))
+                   AS completed_plate_appearances,
+               COUNT(DISTINCT CASE WHEN `strikeout` = 1
+                   THEN CONCAT(`game_pk`, ':', `at_bat_number`)
+               END) AS strikeouts,
+               0 AS swings,
+               0 AS whiffs,
+               AVG(`release_speed`) AS average_velocity,
+               AVG(`release_spin_rate`) AS average_spin,
+               AVG(`pfx_x`) AS average_horizontal_movement,
+               AVG(`pfx_z`) AS average_vertical_movement
+        FROM `Phillies_Pitch_Data`
+        WHERE `pitch_type` IS NOT NULL
+        GROUP BY `pitch_type`
+        ORDER BY pitch_count DESC
+        """
+    )
+
+
 @app.get("/")
 def index() -> str:
     rows = get_first_ten_pitch_rows()
@@ -53,6 +96,19 @@ def about() -> str:
 
 @app.get("/pitch-arsenal")
 def pitch_arsenal() -> str:
+    columns = _pitch_data_columns()
+    if not {"pitcher", "player_name", "events", "description"} <= columns:
+        return render_template(
+            "pitch_arsenal.html",
+            rows=_legacy_pitch_rollup(),
+            data_notice=(
+                "The database has the older pitch table. These rows show "
+                "pitch-type totals across the loaded Phillies data, not "
+                "individual pitchers. Load the expanded Statcast CSV to see "
+                "each pitcher's arsenal and whiff rates."
+            ),
+        )
+
     rows = _query_rows(
         """
         SELECT `pitcher`, `player_name`, `pitch_type`,
@@ -94,6 +150,20 @@ def pitchers() -> Response:
 
 @app.get("/pitch-performance")
 def pitch_performance() -> str:
+    columns = _pitch_data_columns()
+    if not {"events", "description"} <= columns:
+        return render_template(
+            "pitch_performance.html",
+            rows=_legacy_pitch_rollup(),
+            data_notice=(
+                "The database has the older pitch table. Strikeout rates here "
+                "count plate appearances that included each pitch type; they "
+                "do not identify the pitch that ended the at-bat. Swing and "
+                "whiff rates are unavailable until the expanded Statcast data "
+                "is loaded."
+            ),
+        )
+
     rows = _query_rows(
         """
         SELECT `pitch_type`,
@@ -135,6 +205,26 @@ def stats() -> Response:
 
 @app.get("/at-bat-analysis")
 def at_bat_analysis() -> str:
+    columns = _pitch_data_columns()
+    if not {
+        "home_team",
+        "away_team",
+        "events",
+        "pitch_type",
+        "game_pk",
+        "at_bat_number",
+        "strikeout",
+    } <= columns:
+        return render_template(
+            "at_bat_analysis.html",
+            rows=[],
+            data_notice=(
+                "At-bat analysis by opponent is unavailable because the "
+                "database does not include opponent teams and pitch results. "
+                "Load the expanded Statcast CSV to enable this page."
+            ),
+        )
+
     rows = _query_rows(
         """
         SELECT CASE
