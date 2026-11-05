@@ -8,17 +8,28 @@
     EP: "Eephus", SC: "Screwball"
   };
   const teamNames = {
-    ARI: "Arizona Diamondbacks", ATL: "Atlanta Braves", BAL: "Baltimore Orioles",
+    AZ: "Arizona Diamondbacks", ARI: "Arizona Diamondbacks",
+    ATH: "Athletics", OAK: "Athletics",
+    ATL: "Atlanta Braves", BAL: "Baltimore Orioles",
     BOS: "Boston Red Sox", CHC: "Chicago Cubs", CWS: "Chicago White Sox",
     CIN: "Cincinnati Reds", CLE: "Cleveland Guardians", COL: "Colorado Rockies",
     DET: "Detroit Tigers", HOU: "Houston Astros", KC: "Kansas City Royals",
     LAA: "Los Angeles Angels", LAD: "Los Angeles Dodgers", MIA: "Miami Marlins",
     MIL: "Milwaukee Brewers", MIN: "Minnesota Twins", NYM: "New York Mets",
-    NYY: "New York Yankees", OAK: "Athletics", PHI: "Philadelphia Phillies",
+    NYY: "New York Yankees", PHI: "Philadelphia Phillies",
     PIT: "Pittsburgh Pirates", SD: "San Diego Padres", SEA: "Seattle Mariners",
     SF: "San Francisco Giants", STL: "St. Louis Cardinals", TB: "Tampa Bay Rays",
     TEX: "Texas Rangers", TOR: "Toronto Blue Jays", WSH: "Washington Nationals"
   };
+  const teamLogoIds = {
+    AZ: 109, ARI: 109, ATH: 133, OAK: 133,
+    ATL: 144, BAL: 110, BOS: 111, CHC: 112, CWS: 145, CIN: 113,
+    CLE: 114, COL: 115, DET: 116, HOU: 117, KC: 118, LAA: 108,
+    LAD: 119, MIA: 146, MIL: 158, MIN: 142, NYM: 121, NYY: 147,
+    PHI: 143, PIT: 134, SD: 135, SEA: 136, SF: 137, STL: 138,
+    TB: 139, TEX: 140, TOR: 141, WSH: 120
+  };
+  const primaryLogoCodes = new Set(["HOU", "SEA"]);
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -297,8 +308,12 @@
     const opponents = [...new Set(rows.map(opponentOf).filter(Boolean))].sort();
     container.innerHTML = opponents.map((code) => {
       const appearances = rows.filter((row) => opponentOf(row) === code).length;
+      const logoId = teamLogoIds[code];
+      const logo = logoId
+        ? `<img class="opponent-logo" src="https://www.mlbstatic.com/team-logos/${primaryLogoCodes.has(code) ? "team-primary-on-light" : "team-cap-on-light"}/${logoId}.svg" alt="" width="48" height="48" loading="lazy">`
+        : `<span class="opponent-code">${escapeHtml(code)}</span>`;
       return `<a class="opponent-card" href="/opponents/${encodeURIComponent(code)}">
-        <span class="opponent-code">${escapeHtml(code)}</span>
+        ${logo}
         <span><strong>${escapeHtml(teamNames[code] || code)}</strong><small>${appearances.toLocaleString()} pitches tracked</small></span>
         <span class="card-arrow" aria-hidden="true">↗</span>
       </a>`;

@@ -156,6 +156,7 @@ tbody th { color: var(--accent-dark); }
 .opponent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
 .opponent-card { position: relative; display: flex; align-items: center; gap: 15px; min-height: 88px; padding: 16px; border: 1px solid var(--border); border-radius: 7px; background: white; text-decoration: none; transition: border-color .2s, transform .2s; }
 .opponent-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+.opponent-logo { display: block; flex: 0 0 48px; width: 48px; height: 48px; object-fit: contain; }
 .opponent-code { display: grid; flex: 0 0 48px; height: 48px; place-items: center; border-radius: 50%; color: white; background: var(--accent); font-size: .78rem; font-weight: 850; }
 .opponent-card strong, .opponent-card small { display: block; padding-right: 18px; }
 .opponent-card strong { color: var(--text); font-size: .9rem; }
