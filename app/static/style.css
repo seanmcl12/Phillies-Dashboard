@@ -1,8 +1,118 @@
+:root {
+  --color-background: #f4f6f8;
+  --color-text: #202a35;
+  --color-muted-text: #5f6b76;
+  --color-border: #cbd2d9;
+  --color-accent: #6f263d;
+}
+
 body {
-  background-color: #f4f6f8;
-  color: #202a35;
+  background-color: var(--color-background);
+  color: var(--color-text);
   font-family: Arial, Helvetica, sans-serif;
   margin: 2rem;
+}
+
+header {
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+}
+
+nav {
+  color: var(--color-muted-text);
+}
+
+nav a,
+.dashboard-card {
+  color: var(--color-text);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+main {
+  margin: 0 auto;
+  max-width: 90rem;
+}
+
+h1,
+h2,
+p {
+  color: var(--color-text);
+}
+
+.muted {
+  color: var(--color-muted-text);
+}
+
+.phillies-hero {
+  align-items: center;
+  background: var(--color-accent);
+  border-radius: 0.5rem;
+  color: var(--color-background);
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 2rem;
+}
+
+.phillies-hero h2,
+.phillies-hero p {
+  color: var(--color-background);
+}
+
+.phillies-logo {
+  background: var(--color-background);
+  border-radius: 50%;
+  flex: 0 0 auto;
+  height: 7rem;
+  padding: 0.5rem;
+  width: 7rem;
+}
+
+.phillies-hero .eyebrow {
+  color: var(--color-background);
+  font-size: 0.875rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.phillies-hero h2 {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  margin: 0 0 0.5rem;
+}
+
+.phillies-hero p:last-child {
+  margin-bottom: 0;
+  max-width: 42rem;
+}
+
+.dashboard-links {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  margin: 1.5rem 0;
+}
+
+.dashboard-card {
+  border: 1px solid var(--color-border);
+  border-radius: 0.35rem;
+  display: block;
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.dashboard-card:hover {
+  background-color: color-mix(in srgb, var(--color-border), var(--color-background) 65%);
+}
+
+.dashboard-card h3 {
+  margin-top: 0;
 }
 
 table {
@@ -15,22 +125,34 @@ table {
 }
 
 .data-notice {
-  background-color: #fff3cd;
-  border: 1px solid #e0c36d;
+  background-color: color-mix(in srgb, var(--color-border), var(--color-background) 65%);
+  border: 1px solid var(--color-border);
   border-radius: 0.25rem;
   padding: 0.75rem;
 }
 
 th, td {
-  border: 1px solid #cbd2d9;
+  border: 1px solid var(--color-border);
   padding: 0.6rem;
   text-align: left;
 }
 
 th {
-  background-color: #e2e8ee;
+  background-color: color-mix(in srgb, var(--color-border), var(--color-background) 50%);
 }
 
 tbody tr:nth-child(even) {
-  background-color: #e9eef2;
+  background-color: color-mix(in srgb, var(--color-border), var(--color-background) 65%);
+}
+
+@media (max-width: 36rem) {
+  body {
+    margin: 1rem;
+  }
+
+  .phillies-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 1.25rem;
+  }
 }

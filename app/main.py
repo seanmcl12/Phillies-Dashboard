@@ -89,6 +89,11 @@ def index() -> str:
     return render_template("index.html", columns=PITCH_COLUMNS, rows=rows)
 
 
+@app.get("/phillies")
+def phillies() -> str:
+    return render_template("phillies.html")
+
+
 @app.get("/about")
 def about() -> str:
     return render_template("about.html")
