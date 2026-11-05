@@ -1,23 +1,37 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>{% block title %}Philadelphia Phillies{% endblock %}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#6f263d">
+    <title>{% block title %}Phillies Pitching Lab{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   </head>
-  <body>
-    <header>
-      <h1>Philadelphia Phillies</h1>
-      <nav>
-        <a href="{{ url_for('phillies') }}">Phillies</a> |
-        <a href="{{ url_for('index') }}">Home</a> |
-        <a href="{{ url_for('about') }}">About</a> |
-        <a href="{{ url_for('pitch_arsenal') }}">Pitch Arsenal</a> |
-        <a href="{{ url_for('pitch_performance') }}">Pitch Performance</a> |
-        <a href="{{ url_for('at_bat_analysis') }}">At-Bat Analysis</a>
+  <body data-pitch-data-url="{{ pitch_data_url|default('') }}">
+    <header class="site-header">
+      <a class="brand" href="{{ url_for('index') }}">
+        <img src="https://www.mlbstatic.com/team-logos/143.svg" alt="" width="44" height="44">
+        <span>Phillies Pitching Analysis</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('pitch_arsenal') }}">Pitchers</a>
+        <a href="{{ url_for('pitch_comparison') }}">Pitch Comparison</a>
+        <a href="{{ url_for('opponents') }}">Opponents</a>
       </nav>
     </header>
-    <main>
+    <main id="main-content">
       {% block content %}{% endblock %}
     </main>
+    <footer class="site-footer">
+      <span>2025 Phillies regular-season Statcast data from <a href="https://baseballsavant.mlb.com/statcast_search" target="_blank" rel="noreferrer">Baseball Savant</a></span>
+      <span>
+        Citizens Bank Park photo by
+        <a href="https://commons.wikimedia.org/wiki/File:Citizens_Bank_Park,_May_2009.jpg" target="_blank" rel="noreferrer">Bruce C. Cooper</a>
+        / Wikimedia Commons,
+        <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noreferrer">CC BY-SA 3.0</a>
+      </span>
+    </footer>
+    <script src="{{ url_for('static', filename='site.js') }}" defer></script>
   </body>
 </html>

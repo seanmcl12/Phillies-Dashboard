@@ -1,39 +1,55 @@
 {% extends "base.html" %}
 
-{% block title %}Philadelphia Phillies | Pitching Development{% endblock %}
+{% block title %}Phillies Pitching Lab | 2025 Season{% endblock %}
 
 {% block content %}
-<section class="phillies-hero">
-  <img
-    class="phillies-logo"
-    src="https://www.mlbstatic.com/team-logos/143.svg"
-    alt="Philadelphia Phillies logo"
-    width="112"
-    height="112"
-  >
-  <div>
-    <p class="eyebrow">Philadelphia Phillies</p>
-    <h2>Pitching Development</h2>
-    <p>Explore pitch arsenals, pitch results, and at-bat outcomes to support smarter pitching decisions.</p>
+<section class="hero">
+  <div class="hero-content">
+    <p class="eyebrow">2025 SEASON · PHILADELPHIA</p>
+    <h1>Philadelphia<br>Phillies Pitching</h1>
+    <p class="hero-copy">
+      Explore the arms behind the season. Compare pitch movement and velocity,
+      see where pitches crossed the plate, and break down matchups against every
+      opponent.
+    </p>
+    <a class="button button-light" href="#pitchers">Meet the pitchers <span aria-hidden="true">↓</span></a>
+  </div>
+  <div class="hero-mark" aria-hidden="true">
+    <img src="https://www.mlbstatic.com/team-logos/143.svg" alt="">
   </div>
 </section>
 
-<section aria-labelledby="dashboard-title">
-  <h2 id="dashboard-title">Phillies Pitching Dashboard</h2>
-  <p class="muted">Choose an analysis to explore how Phillies pitches perform.</p>
-  <div class="dashboard-links">
-    <a class="dashboard-card" href="{{ url_for('pitch_arsenal') }}">
-      <h3>Pitch Arsenal</h3>
-      <p class="muted">Review the pitches in each Phillies pitcher’s mix.</p>
-    </a>
-    <a class="dashboard-card" href="{{ url_for('pitch_performance') }}">
-      <h3>Pitch Performance</h3>
-      <p class="muted">Compare pitch types by velocity, movement, and results.</p>
-    </a>
-    <a class="dashboard-card" href="{{ url_for('at_bat_analysis') }}">
-      <h3>At-Bat Analysis</h3>
-      <p class="muted">Explore completed at-bats against MLB opponents.</p>
-    </a>
+<section class="section-shell season-overview" aria-label="Season overview">
+  <div class="overview-item"><strong id="season-pitches">—</strong><span>pitches tracked</span></div>
+  <div class="overview-item"><strong id="season-pitchers">—</strong><span>pitchers</span></div>
+  <div class="overview-item"><strong id="season-opponents">—</strong><span>opponents</span></div>
+  <p class="data-note">Built from 2025 regular-season Statcast data</p>
+</section>
+
+<section class="section-shell content-section" id="pitchers">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow eyebrow-dark">THE STAFF</p>
+      <h2>Meet the pitchers</h2>
+    </div>
+    <a class="text-link" href="{{ url_for('pitch_arsenal') }}">View all pitchers <span aria-hidden="true">→</span></a>
+  </div>
+  <div class="pitcher-grid" id="home-pitchers" aria-live="polite">
+    <p class="loading-message">Loading the 2025 pitching staff…</p>
+  </div>
+</section>
+
+<section class="feature-band">
+  <div class="section-shell feature-inner">
+    <div>
+      <p class="eyebrow">GO BEYOND THE BOX SCORE</p>
+      <h2>Every pitch tells a story.</h2>
+      <p>Explore pitch speeds and locations, then see how the Phillies attacked each opponent.</p>
+    </div>
+    <div class="feature-links">
+      <a class="feature-link" href="{{ url_for('pitch_comparison') }}">Compare pitches <span aria-hidden="true">↗</span></a>
+      <a class="feature-link" href="{{ url_for('opponents') }}">Explore opponents <span aria-hidden="true">↗</span></a>
+    </div>
   </div>
 </section>
 {% endblock %}

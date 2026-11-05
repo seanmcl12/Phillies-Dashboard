@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Opponent Matchups | Phillies Pitching Lab{% endblock %}
+
+{% block content %}
+<section class="page-heading section-shell">
+  <p class="eyebrow eyebrow-dark">2025 MATCHUPS</p>
+  <h1>Pick an opponent</h1>
+  <p>Choose a team to see the Phillies’ pitch mix and outcomes against them this season.</p>
+</section>
+<section class="section-shell content-section">
+  <div id="opponent-list" class="opponent-grid" aria-live="polite">
+    <p class="loading-message">Loading opponents…</p>
+  </div>
+</section>
+{% endblock %}

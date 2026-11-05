@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Pitcher Profile | Phillies Pitching Lab{% endblock %}
+
+{% block content %}
+<section class="section-shell content-section">
+  <a class="back-link" href="{{ url_for('pitch_arsenal') }}">← All pitchers</a>
+  <div id="pitcher-profile" class="profile-header" data-pitcher-id="{{ pitcher_id }}">
+    <p class="loading-message">Loading pitcher profile…</p>
+  </div>
+  <div class="summary-grid" id="pitcher-summary"></div>
+  <section class="panel content-section">
+    <div class="section-heading compact-heading">
+      <div><p class="eyebrow eyebrow-dark">PITCH MIX</p><h2>Arsenal &amp; results</h2></div>
+    </div>
+    <div class="table-wrap" id="pitcher-arsenal"></div>
+  </section>
+  <section class="panel content-section">
+    <div class="section-heading compact-heading">
+      <div><p class="eyebrow eyebrow-dark">LOCATION</p><h2>Where his pitches crossed</h2></div>
+    </div>
+    <div id="pitcher-location" class="chart-frame"></div>
+  </section>
+</section>
+{% endblock %}

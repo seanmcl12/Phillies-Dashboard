@@ -1,61 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Pitch Performance | Philadelphia Phillies{% endblock %}
+{% block title %}Pitch Comparison | Phillies Pitching Lab{% endblock %}
 
 {% block content %}
-<h2>Pitch Performance</h2>
-<p>Performance by pitch type, using completed plate appearances for strikeout rates.</p>
-{% if data_notice %}
-<p class="data-notice">{{ data_notice }}</p>
-{% endif %}
-{% if rows %}
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Pitch</th>
-        <th>Pitches</th>
-        <th>Completed PA</th>
-        <th>Strikeouts</th>
-        <th>K rate</th>
-        <th>Swings</th>
-        <th>Whiffs</th>
-        <th>Whiff rate</th>
-        <th>Avg velocity (mph)</th>
-        <th>Avg spin (rpm)</th>
-        <th>Horizontal movement (ft)</th>
-        <th>Vertical movement (ft)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in rows %}
-      <tr>
-        <td>{{ row.pitch_type }}</td>
-        <td>{{ row.pitch_count }}</td>
-        <td>{{ row.completed_plate_appearances }}</td>
-        <td>{{ row.strikeouts }}</td>
-        <td>
-          {% if row.completed_plate_appearances %}
-          {{ "%.1f"|format(100 * row.strikeouts / row.completed_plate_appearances) }}%
-          {% else %}—{% endif %}
-        </td>
-        <td>{{ row.swings }}</td>
-        <td>{{ row.whiffs }}</td>
-        <td>
-          {% if row.swings %}
-          {{ "%.1f"|format(100 * row.whiffs / row.swings) }}%
-          {% else %}—{% endif %}
-        </td>
-        <td>{{ "%.1f"|format(row.average_velocity) if row.average_velocity is not none else "—" }}</td>
-        <td>{{ "%.0f"|format(row.average_spin) if row.average_spin is not none else "—" }}</td>
-        <td>{{ "%.2f"|format(row.average_horizontal_movement) if row.average_horizontal_movement is not none else "—" }}</td>
-        <td>{{ "%.2f"|format(row.average_vertical_movement) if row.average_vertical_movement is not none else "—" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% else %}
-<p>No pitch performance data was found for the loaded season.</p>
-{% endif %}
+<section class="page-heading section-shell">
+  <p class="eyebrow eyebrow-dark">2025 STATCAST</p>
+  <h1>Pitch comparison</h1>
+  <p>Compare the Phillies’ pitch mix, velocity and plate locations. Filter by pitcher to see individual arsenals.</p>
+</section>
+<section class="section-shell content-section">
+  <div class="filter-bar panel">
+    <label>Pitcher
+      <select id="comparison-pitcher"><option value="all">All pitchers</option></select>
+    </label>
+    <label>Compare
+      <select id="comparison-metric">
+        <option value="velocity">Average velocity</option>
+        <option value="count">Pitch count</option>
+        <option value="whiff">Whiff rate</option>
+        <option value="strikeout">Strikeout rate by pitch type</option>
+      </select>
+    </label>
+    <label>Location view
+      <select id="location-pitch">
+        <option value="all">All pitch types</option>
+      </select>
+    </label>
+  </div>
+  <div class="chart-grid">
+    <section class="panel chart-panel">
+      <p class="eyebrow eyebrow-dark">PITCH MIX</p>
+      <h2>How the arsenal compares</h2>
+      <p class="chart-description" id="comparison-description"></p>
+      <div id="comparison-chart" class="chart-frame"></div>
+    </section>
+    <section class="panel chart-panel">
+      <p class="eyebrow eyebrow-dark">PLATE LOCATION</p>
+      <h2>Where pitches crossed</h2>
+      <p class="chart-description">Each dot is a pitch; the box marks the approximate strike zone.</p>
+      <div id="comparison-location" class="chart-frame"></div>
+    </section>
+  </div>
+</section>
 {% endblock %}

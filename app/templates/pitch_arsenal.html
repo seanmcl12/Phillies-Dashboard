@@ -1,59 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Pitch Arsenal | Philadelphia Phillies{% endblock %}
+{% block title %}Phillies Pitchers | Phillies Pitching Lab{% endblock %}
 
 {% block content %}
-<h2>Pitch Arsenal</h2>
-<p>Pitch mix, average velocity, spin, movement, and strikeout results for each Phillies pitcher.</p>
-{% if data_notice %}
-<p class="data-notice">{{ data_notice }}</p>
-{% endif %}
-{% if rows %}
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Pitcher</th>
-        <th>Pitch</th>
-        <th>Pitches</th>
-        <th>Completed PA</th>
-        <th>Strikeouts</th>
-        <th>K rate</th>
-        <th>Whiff rate</th>
-        <th>Avg velocity (mph)</th>
-        <th>Avg spin (rpm)</th>
-        <th>Horizontal movement (ft)</th>
-        <th>Vertical movement (ft)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in rows %}
-      <tr>
-        <td>{{ row.player_name or row.pitcher }}</td>
-        <td>{{ row.pitch_type }}</td>
-        <td>{{ row.pitch_count }}</td>
-        <td>{{ row.completed_plate_appearances }}</td>
-        <td>{{ row.strikeouts }}</td>
-        <td>
-          {% if row.completed_plate_appearances %}
-          {{ "%.1f"|format(100 * row.strikeouts / row.completed_plate_appearances) }}%
-          {% else %}—{% endif %}
-        </td>
-        <td>
-          {% if row.swings %}
-          {{ "%.1f"|format(100 * row.whiffs / row.swings) }}%
-          {% else %}—{% endif %}
-        </td>
-        <td>{{ "%.1f"|format(row.average_velocity) if row.average_velocity is not none else "—" }}</td>
-        <td>{{ "%.0f"|format(row.average_spin) if row.average_spin is not none else "—" }}</td>
-        <td>{{ "%.2f"|format(row.average_horizontal_movement) if row.average_horizontal_movement is not none else "—" }}</td>
-        <td>{{ "%.2f"|format(row.average_vertical_movement) if row.average_vertical_movement is not none else "—" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% else %}
-<p>No pitch arsenal data was found for the loaded season.</p>
-{% endif %}
+<section class="page-heading section-shell">
+  <p class="eyebrow eyebrow-dark">2025 PHILLIES</p>
+  <h1>The pitching staff</h1>
+  <p>Choose a pitcher to explore his season workload, pitch mix, velocity and results.</p>
+</section>
+<section class="section-shell content-section">
+  <div class="pitcher-grid" id="all-pitchers" aria-live="polite">
+    <p class="loading-message">Loading pitchers…</p>
+  </div>
+</section>
 {% endblock %}
