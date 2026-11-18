@@ -490,38 +490,285 @@
       <p class="table-note">*Completed plate appearances ending with this pitch type.</p>`;
   }
 
+  const comparisonColors = [
+    "#E81828", "#2878B8", "#D39316", "#6548A3", "#18856B", "#D0529A",
+    "#67717C", "#9A5A2A", "#00A6A6", "#748C21", "#6D59A8", "#E27632"
+  ];
+  const colorForPitch = (code, codes) => comparisonColors[Math.max(0, codes.indexOf(code)) % comparisonColors.length];
+
+  function comparisonRows(rows, pitcherId, hand, pitchTypes) {
+    return rows.filter((row) =>
+      (pitcherId === "all" || String(row.pitcher) === pitcherId) &&
+      (hand === "all" || row.stand === hand) &&
+      pitchTypes.includes(row.pitch_type));
+  }
+
+  function comparisonStats(rows, totalPitchCount = rows.length) {
+    const types = pitchStats(rows);
+    const terminal = terminalPitches(rows);
+    const noAtBatEvents = new Set(["walk", "intent_walk", "hit_by_pitch", "sac_fly", "sac_bunt"]);
+    const totalBases = { single: 1, double: 2, triple: 3, home_run: 4 };
+    return types.map((type) => {
+      const outcomes = terminal.filter((row) => row.pitch_type === type.code);
+      const atBats = outcomes.filter((row) => !noAtBatEvents.has(row.events));
+      const hits = atBats.filter((row) => totalBases[row.events]);
+      const bases = hits.reduce((sum, row) => sum + totalBases[row.events], 0);
+      const speedRows = type.rows.map((row) => number(row.release_speed)).filter((value) => value !== null);
+      const spinRows = type.rows.map((row) => number(row.release_spin_rate)).filter((value) => value !== null);
+      const horizontal = type.rows.map((row) => number(row.pfx_x)).filter((value) => value !== null);
+      const vertical = type.rows.map((row) => number(row.pfx_z)).filter((value) => value !== null);
+      return {
+        ...type,
+        velocity: mean(speedRows),
+        spin: mean(spinRows),
+        horizontal: mean(horizontal),
+        vertical: mean(vertical),
+        usage: totalPitchCount ? type.count / totalPitchCount * 100 : null,
+        battingAverage: atBats.length ? hits.length / atBats.length : null,
+        slugging: atBats.length ? bases / atBats.length : null,
+        atBats: atBats.length
+      };
+    });
+  }
+
+  function comparisonSummaryTable(series) {
+    const groups = series.flatMap(({ pitcher, rows, basePitchCount }) =>
+      comparisonStats(rows, basePitchCount).map((stats) => ({ pitcher, stats })));
+    if (!groups.length) return `<p class="empty-message">No pitches match these filters.</p>`;
+    return `${groups.length ? `<div class="table-wrap comparison-table-wrap"><table><thead><tr><th>Pitcher</th><th>Pitch type</th><th>Usage</th><th>Avg velo</th><th>Spin</th><th>H break</th><th>V break</th><th>Whiff</th><th>Opp AVG</th><th>Opp SLG</th><th>Sample</th></tr></thead>
+      <tbody>${groups.map(({ pitcher, stats }) => `<tr>
+        <th>${escapeHtml(pitcher.name)}</th><td>${escapeHtml(pitchName(stats.code))}</td>
+        <td>${format(stats.usage)}%</td><td>${format(stats.velocity)} mph</td><td>${stats.spin === null ? "—" : `${Math.round(stats.spin)} rpm`}</td>
+        <td>${format(stats.horizontal)} ft</td><td>${format(stats.vertical)} ft</td><td>${format(stats.whiffRate)}%</td>
+        <td>${stats.battingAverage === null ? "—" : stats.battingAverage.toFixed(3).replace(/^0/, "")}</td>
+        <td>${stats.slugging === null ? "—" : stats.slugging.toFixed(3).replace(/^0/, "")}</td>
+        <td>${stats.count.toLocaleString()} pitches · ${stats.atBats} AB${stats.count < 30 ? `<span class="sample-warning">Low sample</span>` : ""}</td>
+      </tr>`).join("")}</tbody></table><p class="table-note">Pitch types with fewer than 30 tracked pitches are marked low sample; outcome rates use only completed plate appearances.</p></div>` : `<p class="empty-message">No pitches match these filters.</p>`}`;
+  }
+
+  function movementSvg(series, pitchTypes) {
+    const measured = series.flatMap(({ pitcher, pitcherIndex, rows }) =>
+      rows.filter((row) => number(row.pfx_x) !== null && number(row.pfx_z) !== null)
+        .map((row) => ({ ...row, pitcher, pitcherIndex })));
+    if (!measured.length) return `<p class="empty-message">No movement measurements match these filters.</p>`;
+    const width = 720;
+    const height = 390;
+    const left = 60;
+    const right = 22;
+    const top = 24;
+    const bottom = 54;
+    const valuesX = measured.map((row) => row.pfx_x);
+    const valuesY = measured.map((row) => row.pfx_z);
+    const xMin = Math.min(...valuesX, -2);
+    const xMax = Math.max(...valuesX, 2);
+    const yMin = Math.min(...valuesY, -2);
+    const yMax = Math.max(...valuesY, 2);
+    const x = (value) => left + (value - xMin) / (xMax - xMin || 1) * (width - left - right);
+    const y = (value) => top + (yMax - value) / (yMax - yMin || 1) * (height - top - bottom);
+    const pitchPoints = measured.map((row) => {
+      const fill = colorForPitch(row.pitch_type, pitchTypes);
+      const point = row.pitcherIndex === 0
+        ? `<circle cx="${x(row.pfx_x)}" cy="${y(row.pfx_z)}" r="3.1" fill="${fill}" fill-opacity=".52"/>`
+        : `<rect x="${x(row.pfx_x) - 2.8}" y="${y(row.pfx_z) - 2.8}" width="5.6" height="5.6" fill="${fill}" fill-opacity=".62"/>`;
+      return `<g><title>${escapeHtml(row.pitcher)} · ${escapeHtml(pitchName(row.pitch_type))}</title>${point}</g>`;
+    }).join("");
+    const xTicks = [0, 1, 2, 3, 4].map((step) => {
+      const value = xMin + step * (xMax - xMin) / 4;
+      return `<g><line class="chart-gridline" x1="${x(value)}" x2="${x(value)}" y1="${top}" y2="${height - bottom}"/><text class="axis-label" x="${x(value)}" y="${height - bottom + 18}" text-anchor="middle">${format(value)}</text></g>`;
+    }).join("");
+    const yTicks = [0, 1, 2, 3, 4].map((step) => {
+      const value = yMin + step * (yMax - yMin) / 4;
+      return `<g><line class="chart-gridline" x1="${left}" x2="${width - right}" y1="${y(value)}" y2="${y(value)}"/><text class="axis-label" x="${left - 8}" y="${y(value) + 4}" text-anchor="end">${format(value)}</text></g>`;
+    }).join("");
+    const legend = pitchTypes.map((code, index) =>
+      `<g transform="translate(${left + (index % 4) * 145} ${top + 12 + Math.floor(index / 4) * 18})"><circle r="4" fill="${colorForPitch(code, pitchTypes)}"/><text class="axis-label" x="9" y="4">${escapeHtml(pitchName(code))}</text></g>`
+    ).join("");
+    return `<svg class="chart-svg comparison-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Pitch movement plot">
+      ${xTicks}${yTicks}${legend}
+      <g transform="translate(${width - 164} ${height - 28})"><circle cx="0" cy="0" r="4" fill="#68717b"/><text class="axis-label" x="8" y="4">Pitcher 1</text><rect x="76" y="-4" width="8" height="8" fill="#68717b"/><text class="axis-label" x="89" y="4">Pitcher 2</text></g>
+      ${pitchPoints}
+      <text class="axis-label" x="${(left + width - right) / 2}" y="${height - 5}" text-anchor="middle">Horizontal movement (ft)</text>
+      <text class="axis-label" transform="translate(14 ${(top + height - bottom) / 2}) rotate(-90)" text-anchor="middle">Vertical movement (ft)</text>
+    </svg>`;
+  }
+
+  function comparisonLocationSvg(rows, hand, pitchTypes) {
+    const measured = rows.filter((row) =>
+      row.stand === hand && number(row.plate_x) !== null && number(row.plate_z) !== null && row.pitch_type);
+    if (!measured.length) return `<p class="empty-message">No ${hand === "R" ? "right" : "left"}-handed batter locations match these filters.</p>`;
+    const width = 620;
+    const height = 360;
+    const left = 56;
+    const right = 20;
+    const top = 28;
+    const bottom = 44;
+    const x = (value) => left + (value + 2.2) / 4.4 * (width - left - right);
+    const y = (value) => top + (5.2 - value) / 4.4 * (height - top - bottom);
+    const stride = Math.max(1, Math.ceil(measured.length / 700));
+    const points = measured.filter((_, index) => index % stride === 0).map((row) =>
+      `<circle cx="${x(row.plate_x)}" cy="${y(row.plate_z)}" r="3" fill="${colorForPitch(row.pitch_type, pitchTypes)}" fill-opacity=".58"><title>${escapeHtml(pitchName(row.pitch_type))} · ${format(number(row.release_speed))} mph · ${hand === "R" ? "RHH" : "LHH"}</title></circle>`
+    ).join("");
+    const legend = pitchTypes.slice(0, 6).map((code, index) =>
+      `<g transform="translate(${left + (index % 3) * 170} ${top + 9 + Math.floor(index / 3) * 16})"><circle r="4" fill="${colorForPitch(code, pitchTypes)}"/><text class="axis-label" x="8" y="4">${escapeHtml(pitchName(code))}</text></g>`
+    ).join("");
+    return `<svg class="chart-svg comparison-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Pitch locations versus ${hand === "R" ? "right" : "left"}-handed batters">
+      <rect class="strike-zone" x="${x(-0.83)}" y="${y(3.5)}" width="${x(0.83) - x(-0.83)}" height="${y(1.5) - y(3.5)}"/>
+      <line class="plate-axis" x1="${left}" x2="${width - right}" y1="${y(2.5)}" y2="${y(2.5)}"/>
+      <line class="plate-axis" x1="${x(0)}" x2="${x(0)}" y1="${top}" y2="${height - bottom}"/>
+      ${legend}${points}
+      <text class="axis-label" x="${width / 2}" y="${height - 6}" text-anchor="middle">Horizontal plate location (ft)</text>
+      <text class="axis-label" transform="translate(15 ${height / 2}) rotate(-90)" text-anchor="middle">Height (ft)</text>
+    </svg>`;
+  }
+
+  function trendSvg(series, pitchTypes, metric) {
+    const valueFor = (row) => metric === "velocity" ? number(row.release_speed) : number(row[metric]);
+    const grouped = [];
+    for (const item of series) {
+      for (const code of pitchTypes) {
+        const byDate = new Map();
+        for (const row of item.rows) {
+          if (row.pitch_type !== code || !row.game_date) continue;
+          const value = valueFor(row);
+          if (value === null) continue;
+          if (!byDate.has(row.game_date)) byDate.set(row.game_date, []);
+          byDate.get(row.game_date).push(value);
+        }
+        grouped.push({
+          pitcher: item.pitcher,
+          pitcherIndex: item.pitcherIndex,
+          code,
+          points: [...byDate.entries()].map(([date, values]) => ({ date, value: mean(values) }))
+            .sort((a, b) => a.date.localeCompare(b.date))
+        });
+      }
+    }
+    const active = grouped.filter((line) => line.points.length);
+    if (!active.length) return `<p class="empty-message">No game-by-game measurements match these filters.</p>`;
+    const dates = active.flatMap((line) => line.points.map((point) => point.date));
+    const values = active.flatMap((line) => line.points.map((point) => point.value));
+    const width = 720;
+    const height = 320;
+    const left = 56;
+    const right = 22;
+    const top = 76;
+    const bottom = 45;
+    const xMin = Date.parse(`${dates.sort()[0]}T00:00:00Z`);
+    const xMax = Date.parse(`${dates[dates.length - 1]}T00:00:00Z`);
+    const yMin = Math.min(...values);
+    const yMax = Math.max(...values);
+    const x = (date) => left + (Date.parse(`${date}T00:00:00Z`) - xMin) / (xMax - xMin || 1) * (width - left - right);
+    const y = (value) => top + (yMax - value) / (yMax - yMin || 1) * (height - top - bottom);
+    const grid = [0, 1, 2, 3].map((step) => {
+      const value = yMin + (yMax - yMin) * step / 3;
+      const yy = y(value);
+      return `<g><line class="chart-gridline" x1="${left}" x2="${width - right}" y1="${yy}" y2="${yy}"/><text class="axis-label" x="${left - 7}" y="${yy + 4}" text-anchor="end">${format(value)}</text></g>`;
+    }).join("");
+    const lines = active.map((line) => {
+      const points = line.points.map((point) => `${x(point.date)},${y(point.value)}`).join(" ");
+      const color = colorForPitch(line.code, pitchTypes);
+      const dash = line.pitcherIndex ? ` stroke-dasharray="5 4"` : "";
+      return `<g><polyline points="${points}" fill="none" stroke="${color}" stroke-width="2"${dash}/>${line.points.map((point) => `<circle cx="${x(point.date)}" cy="${y(point.value)}" r="2.7" fill="${color}"><title>${escapeHtml(line.pitcher)} · ${escapeHtml(pitchName(line.code))} · ${point.date}: ${format(point.value)}</title></circle>`).join("")}</g>`;
+    }).join("");
+    const activeCodes = [...new Set(active.map((line) => line.code))];
+    const legend = activeCodes.map((code, index) =>
+      `<g transform="translate(${left + (index % 4) * 145} ${20 + Math.floor(index / 4) * 17})"><circle r="4" fill="${colorForPitch(code, pitchTypes)}"/><text class="axis-label" x="9" y="4">${escapeHtml(pitchName(code))}</text></g>`
+    ).join("");
+    const dateLabels = [...new Set(dates)].filter((_, index, allDates) =>
+      index === 0 || index === allDates.length - 1 || index % Math.ceil(allDates.length / 5) === 0
+    ).map((date) => `<text class="axis-label" x="${x(date)}" y="${height - 12}" text-anchor="middle">${date.slice(5)}</text>`).join("");
+    const unit = metric === "velocity" ? "Velocity (mph)" : `${metric === "pfx_x" ? "Horizontal" : "Vertical"} movement (ft)`;
+    return `<svg class="chart-svg comparison-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${unit} by game date">
+      ${grid}${legend}${lines}${dateLabels}
+      <text class="axis-label" transform="translate(14 ${height / 2}) rotate(-90)" text-anchor="middle">${unit}</text>
+    </svg>`;
+  }
+
+  function comparisonTakeaway(series) {
+    if (series.length < 1) return `<p>No pitches match these filters. Try another pitcher or pitch type.</p>`;
+    if (series.every((item) => item.rows.length === 0)) return `<p>No pitches match these filters. Try another pitcher, pitch type or batter handedness.</p>`;
+    const first = comparisonStats(series[0].rows, series[0].basePitchCount);
+    if (series.length > 1) {
+      const second = comparisonStats(series[1].rows, series[1].basePitchCount);
+      const shared = first.map((a) => ({ first: a, second: second.find((b) => b.code === a.code) }))
+        .filter((pair) => pair.second && pair.first.swings >= 10 && pair.second.swings >= 10);
+      const whiffEdge = [...shared].sort((a, b) =>
+        (b.first.whiffRate ?? -1) - (b.second.whiffRate ?? -1) -
+        ((a.first.whiffRate ?? -1) - (a.second.whiffRate ?? -1))
+      )[0];
+      if (whiffEdge && whiffEdge.first.whiffRate !== null && whiffEdge.second.whiffRate !== null) {
+        const leader = whiffEdge.first.whiffRate >= whiffEdge.second.whiffRate ? series[0].pitcher.name : series[1].pitcher.name;
+        const edge = Math.abs(whiffEdge.first.whiffRate - whiffEdge.second.whiffRate);
+        return `<p><strong>${escapeHtml(leader)}</strong> has the higher tracked whiff rate on ${escapeHtml(pitchName(whiffEdge.first.code))} by ${format(edge)} percentage points (${whiffEdge.first.swings.toLocaleString()} vs. ${whiffEdge.second.swings.toLocaleString()} swings).</p>`;
+      }
+      return `<p>There aren’t enough shared pitch types with at least 10 tracked swings from each pitcher to make a reliable whiff-rate comparison.</p>`;
+    }
+    if (!first.length) return `<p>No pitch types match these filters.</p>`;
+    const highUse = [...first].sort((a, b) => b.usage - a.usage)[0];
+    const mostWhiffs = [...first].filter((stats) => stats.whiffRate !== null && stats.swings >= 10)
+      .sort((a, b) => b.whiffRate - a.whiffRate)[0];
+    if (mostWhiffs && highUse.code !== mostWhiffs.code) {
+      return `<p>${escapeHtml(pitchName(highUse.code))} is used most often (${format(highUse.usage)}%, ${highUse.count.toLocaleString()} pitches), while ${escapeHtml(pitchName(mostWhiffs.code))} has the highest tracked whiff rate (${format(mostWhiffs.whiffRate)}% on ${mostWhiffs.swings.toLocaleString()} swings).</p>`;
+    }
+    return `<p>${escapeHtml(pitchName(highUse.code))} is the most-used pitch (${format(highUse.usage)}%, ${highUse.count.toLocaleString()} pitches). Whiff comparisons are shown only when there are at least 10 tracked swings.</p>`;
+  }
+
   function renderComparison(rows) {
     const pitcherSelect = document.querySelector("#comparison-pitcher");
-    const metricSelect = document.querySelector("#comparison-metric");
-    const locationSelect = document.querySelector("#location-pitch");
-    if (!pitcherSelect || !metricSelect || !locationSelect) return;
+    const secondPitcherSelect = document.querySelector("#comparison-pitcher-2");
+    const pitchSelect = document.querySelector("#comparison-pitches");
+    const handSelect = document.querySelector("#comparison-hand");
+    const trendMetricSelect = document.querySelector("#comparison-trend-metric");
+    if (!pitcherSelect || !secondPitcherSelect || !pitchSelect || !handSelect || !trendMetricSelect) return;
+
+    const pitchers = pitcherGroups(rows);
+    const options = pitchers.map((pitcher) =>
+      `<option value="${escapeHtml(pitcher.id)}">${escapeHtml(pitcher.name)}</option>`
+    ).join("");
+    pitcherSelect.innerHTML = `<option value="all">All pitchers</option>${options}`;
+    secondPitcherSelect.innerHTML = `<option value="">No comparison</option>${options}`;
     const queryPitcher = new URLSearchParams(location.search).get("pitcher");
     if (queryPitcher && [...pitcherSelect.options].some((option) => option.value === queryPitcher)) {
       pitcherSelect.value = queryPitcher;
     }
+    const codes = [...new Set(rows.map((row) => row.pitch_type).filter(Boolean))].sort();
+    pitchSelect.innerHTML = codes.map((code) =>
+      `<label class="pitch-checkbox"><input type="checkbox" value="${escapeHtml(code)}" checked><span>${escapeHtml(pitchName(code))}</span></label>`
+    ).join("");
+
     const update = () => {
-      const selectedId = pitcherSelect.value;
-      const selectedRows = selectedId === "all" ? rows : rows.filter((row) => String(row.pitcher) === selectedId);
-      const types = pitchStats(selectedRows);
-      const metric = metricSelect.value;
-      const metricKey = { velocity: "velocity", count: "count", whiff: "whiffRate", strikeout: "strikeoutRate" }[metric];
-      const labels = {
-        velocity: "Average release speed by pitch type, in miles per hour.",
-        count: "Number of pitches thrown by type.",
-        whiff: "Swings that missed divided by tracked swings.",
-        strikeout: "Strikeouts divided by completed plate appearances ending on each pitch type."
-      };
-      document.querySelector("#comparison-description").textContent = labels[metric];
-      document.querySelector("#comparison-chart").innerHTML = svgBars(types, metricKey);
-      const selectedType = locationSelect.value;
-      const locationRows = selectedType === "all" ? selectedRows
-        : selectedRows.filter((row) => row.pitch_type === selectedType);
-      document.querySelector("#comparison-location").innerHTML = locationSvg(locationRows);
+      const selectedTypes = [...pitchSelect.querySelectorAll('input[type="checkbox"]:checked')]
+        .map((input) => input.value);
+      const hand = handSelect.value;
+      const selected = [
+        { id: pitcherSelect.value, index: 0 },
+        ...(secondPitcherSelect.value && secondPitcherSelect.value !== pitcherSelect.value
+          ? [{ id: secondPitcherSelect.value, index: 1 }] : [])
+      ].map(({ id, index }) => {
+        const pitcher = id === "all"
+          ? { name: "All pitchers", id: "all" }
+          : pitchers.find((item) => String(item.id) === id);
+        const baseRows = comparisonRows(rows, id, hand, codes);
+        return pitcher ? {
+          pitcher,
+          pitcherIndex: index,
+          rows: comparisonRows(rows, id, hand, selectedTypes),
+          basePitchCount: baseRows.length
+        } : null;
+      }).filter(Boolean);
+
+      document.querySelector("#comparison-summary").innerHTML = comparisonSummaryTable(selected);
+      document.querySelector("#comparison-movement").innerHTML = movementSvg(selected, selectedTypes);
+      document.querySelector("#comparison-trends").innerHTML = trendSvg(selected, selectedTypes, trendMetricSelect.value);
+      const locationRows = selected.flatMap((item) => item.rows);
+      document.querySelector("#comparison-location-right").innerHTML = comparisonLocationSvg(locationRows, "R", selectedTypes);
+      document.querySelector("#comparison-location-left").innerHTML = comparisonLocationSvg(locationRows, "L", selectedTypes);
+      document.querySelector("#comparison-takeaway").innerHTML = comparisonTakeaway(selected);
     };
-    locationSelect.innerHTML = `<option value="all">All pitch types</option>` +
-      [...new Set(rows.map((row) => row.pitch_type).filter(Boolean))]
-        .sort().map((code) => `<option value="${escapeHtml(code)}">${escapeHtml(pitchName(code))}</option>`).join("");
-    for (const control of [pitcherSelect, metricSelect, locationSelect]) control.addEventListener("change", update);
+
+    for (const control of [pitcherSelect, secondPitcherSelect, pitchSelect, handSelect, trendMetricSelect]) {
+      control.addEventListener("change", update);
+    }
     update();
   }
 
@@ -647,8 +894,9 @@
     } catch (error) {
       const message = error instanceof Error ? error.message : "The pitch data could not be loaded.";
       for (const selector of [
-        "#home-pitchers", "#all-pitchers", "#pitcher-profile", "#comparison-chart",
-        "#comparison-location", "#opponent-list", "#opponent-chart"
+        "#home-pitchers", "#all-pitchers", "#pitcher-profile", "#comparison-summary",
+        "#comparison-movement", "#comparison-trends", "#comparison-location-right",
+        "#comparison-location-left", "#comparison-takeaway", "#opponent-list", "#opponent-chart"
       ]) {
         const element = document.querySelector(selector);
         if (element) showError(element, message);

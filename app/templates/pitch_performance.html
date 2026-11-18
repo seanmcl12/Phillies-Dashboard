@@ -6,39 +6,86 @@
 <section class="page-heading section-shell">
   <p class="eyebrow eyebrow-dark">2025 STATCAST</p>
   <h1>Pitch comparison</h1>
-  <p>Compare the Phillies’ pitch mix, velocity and plate locations. Filter by pitcher to see individual arsenals.</p>
+  <p>Compare pitch characteristics, movement, locations and outcomes across one or two Phillies pitchers.</p>
 </section>
-<section class="section-shell content-section">
-  <div class="filter-bar panel">
-    <label>Pitcher
+<section class="section-shell content-section comparison-page">
+  <div class="comparison-filters panel">
+    <label>Pitcher 1
       <select id="comparison-pitcher"><option value="all">All pitchers</option></select>
     </label>
-    <label>Compare
-      <select id="comparison-metric">
-        <option value="velocity">Average velocity</option>
-        <option value="count">Pitch count</option>
-        <option value="whiff">Whiff rate</option>
-        <option value="strikeout">Strikeout rate by pitch type</option>
-      </select>
+    <label>Pitcher 2 <span class="filter-hint">Optional</span>
+      <select id="comparison-pitcher-2"><option value="">No comparison</option></select>
     </label>
-    <label>Location view
-      <select id="location-pitch">
-        <option value="all">All pitch types</option>
+    <fieldset class="pitch-type-filter">
+      <legend>Pitch types <span class="filter-hint">Select one or more</span></legend>
+      <div id="comparison-pitches" class="pitch-checkbox-list" aria-label="Pitch types to compare"></div>
+    </fieldset>
+    <label>Season
+      <select id="comparison-season"><option value="2025">2025 regular season</option></select>
+    </label>
+    <label>Batter handedness
+      <select id="comparison-hand">
+        <option value="all">All batters</option>
+        <option value="R">Right-handed</option>
+        <option value="L">Left-handed</option>
       </select>
     </label>
   </div>
-  <div class="chart-grid">
+
+  <section class="panel comparison-block">
+    <div class="section-heading compact-heading">
+      <div><p class="eyebrow eyebrow-dark">COMPACT STAT SUMMARY</p><h2>Selected pitch performance</h2></div>
+    </div>
+    <p class="chart-description">Movement is reported in feet. Opponent AVG and SLG are calculated from tracked completed plate appearances ending on the selected pitch type.</p>
+    <div class="table-wrap comparison-table-wrap" id="comparison-summary"></div>
+  </section>
+
+  <div class="chart-grid comparison-chart-grid">
     <section class="panel chart-panel">
-      <p class="eyebrow eyebrow-dark">PITCH MIX</p>
-      <h2>How the arsenal compares</h2>
-      <p class="chart-description" id="comparison-description"></p>
-      <div id="comparison-chart" class="chart-frame"></div>
+      <p class="eyebrow eyebrow-dark">MOVEMENT</p>
+      <h2>Horizontal and vertical break</h2>
+      <p class="chart-description">Each point is a tracked pitch; color indicates pitch type and shape distinguishes pitchers.</p>
+      <div id="comparison-movement" class="chart-frame"></div>
     </section>
     <section class="panel chart-panel">
-      <p class="eyebrow eyebrow-dark">PLATE LOCATION</p>
-      <h2>Where pitches crossed</h2>
-      <p class="chart-description">Each dot is a pitch; the box marks the approximate strike zone.</p>
-      <div id="comparison-location" class="chart-frame"></div>
+      <p class="eyebrow eyebrow-dark">OVER TIME</p>
+      <h2>Velocity and movement trends</h2>
+      <label class="trend-metric-label" for="comparison-trend-metric">Trend metric</label>
+      <select id="comparison-trend-metric">
+        <option value="velocity">Average velocity</option>
+        <option value="pfx_x">Horizontal movement</option>
+        <option value="pfx_z">Vertical movement</option>
+      </select>
+      <p class="chart-description">Game-by-game averages over the 2025 regular season. Color indicates pitch type; solid and dashed lines distinguish pitchers.</p>
+      <div id="comparison-trends" class="chart-frame"></div>
+    </section>
+  </div>
+
+  <section class="panel comparison-block">
+    <div class="section-heading compact-heading">
+      <div><p class="eyebrow eyebrow-dark">PLATE LOCATION</p><h2>Compare where pitches crossed</h2></div>
+    </div>
+    <p class="chart-description" id="comparison-location-description">Strike zones are shown over plate locations and split by batter handedness.</p>
+    <div class="chart-grid location-comparison-grid">
+      <div><h3 class="location-hand-heading">vs. right-handed batters</h3><div id="comparison-location-right" class="chart-frame"></div></div>
+      <div><h3 class="location-hand-heading">vs. left-handed batters</h3><div id="comparison-location-left" class="chart-frame"></div></div>
+    </div>
+  </section>
+
+  <div class="chart-grid comparison-chart-grid">
+    <section class="panel chart-panel">
+      <p class="eyebrow eyebrow-dark">RESULTS BY COUNT</p>
+      <h2>Hitter-friendly vs. pitcher-friendly counts</h2>
+      <div id="comparison-count-results" class="count-unavailable">
+        <p>Count-by-count usage and outcomes aren’t available because the source data does not include balls or strikes for each pitch.</p>
+      </div>
+    </section>
+    <section class="panel chart-panel">
+      <p class="eyebrow eyebrow-dark">TAKEAWAY</p>
+      <h2>What stands out</h2>
+      <div id="comparison-takeaway" class="comparison-takeaway" aria-live="polite">
+        <p>Select pitchers and pitch types to generate a data-backed comparison.</p>
+      </div>
     </section>
   </div>
 </section>
