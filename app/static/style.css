@@ -90,16 +90,16 @@ button, select { font: inherit; }
 .text-link span { color: var(--accent-blue); }
 
 .pitcher-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
-.pitcher-card { position: relative; display: flex; min-width: 0; min-height: 128px; overflow: hidden; align-items: center; gap: 15px; padding: 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: 0 3px 14px rgb(26 35 45 / 3%); text-decoration: none; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.pitcher-card { position: relative; display: flex; min-width: 0; min-height: 185px; overflow: hidden; align-items: center; gap: 18px; padding: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: 0 5px 18px rgb(26 35 45 / 5%); text-decoration: none; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
 .pitcher-card:hover { border-color: var(--accent-blue); box-shadow: var(--shadow); transform: translateY(-3px); }
-.pitcher-photo-wrap { display: grid; flex: 0 0 76px; width: 76px; height: 92px; place-items: center; overflow: hidden; border-radius: 5px; background: #e6f2fb; }
+.pitcher-photo-wrap { display: grid; flex: 0 0 118px; width: 118px; height: 145px; place-items: center; overflow: hidden; border-radius: 6px; background: #e6f2fb; }
 .pitcher-photo { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .photo-fallback { display: grid; width: 100%; height: 100%; place-items: center; color: var(--accent); font-size: 1.5rem; font-weight: 850; }
 .photo-fallback[hidden] { display: none; }
 .pitcher-card-copy { min-width: 0; padding-right: 14px; }
 .pitcher-card-kicker { color: var(--muted-text); font-size: .61rem; font-weight: 850; letter-spacing: .12em; }
-.pitcher-card h3 { margin: 5px 0 6px; overflow-wrap: anywhere; color: var(--accent-dark); font-size: 1.02rem; line-height: 1.15; }
-.pitcher-card p { margin: 0; color: var(--muted-text); font-size: .77rem; line-height: 1.4; }
+.pitcher-card h3 { margin: 7px 0 8px; overflow-wrap: anywhere; color: var(--accent-dark); font-size: 1.18rem; line-height: 1.15; }
+.pitcher-card p { margin: 0; color: var(--muted-text); font-size: .82rem; line-height: 1.45; }
 .card-arrow { position: absolute; top: 13px; right: 14px; color: var(--accent-blue); font-size: 1.1rem; font-weight: 850; }
 .loading-message, .empty-message, .error-message { grid-column: 1 / -1; margin: 0; padding: 20px; border-radius: 7px; color: var(--muted-text); background: white; }
 .error-message { border: 1px solid #d59bab; color: #7a1e35; background: #fff5f7; }
@@ -153,7 +153,10 @@ thead th { color: var(--muted-text); font-size: .75rem; letter-spacing: .04em; t
 tbody th { color: var(--accent-dark); }
 .table-note { margin: 10px 0 0; color: var(--muted-text); font-size: .76rem; }
 .snapshot-section, .analysis-section { padding-block: 58px; }
+.snapshot-layout { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.7fr); gap: 16px; align-items: stretch; }
 .snapshot-grid, .analysis-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.snapshot-photo { min-height: 175px; margin: 0; overflow: hidden; border-radius: 8px; background: #e6e9ed; }
+.snapshot-photo img { display: block; width: 100%; height: 100%; min-height: 175px; object-fit: cover; }
 .snapshot-card { display: grid; align-content: start; gap: 8px; min-height: 175px; padding: 22px; border: 1px solid var(--border); border-radius: 8px; background: white; }
 .snapshot-stat { color: var(--accent); font-size: 2.15rem; line-height: 1; font-weight: 850; letter-spacing: -.04em; }
 .snapshot-card h3 { margin: 7px 0 0; color: var(--accent-dark); font-size: 1.05rem; }
@@ -212,6 +215,7 @@ tbody th { color: var(--accent-dark); }
   .pitcher-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .opponent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .snapshot-grid { grid-template-columns: 1fr; }
+  .snapshot-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   .site-header { align-items: flex-start; flex-direction: column; gap: 12px; padding: 13px 22px 15px; }
@@ -245,7 +249,7 @@ tbody th { color: var(--accent-dark); }
 }
 @media (max-width: 480px) {
   .pitcher-grid, .opponent-grid { grid-template-columns: 1fr; }
-  .pitcher-card { min-height: 115px; }
+  .pitcher-card { min-height: 175px; }
   .hero { min-height: 530px; }
   .hero-copy { font-size: .98rem; }
   .summary-grid { gap: 9px; }

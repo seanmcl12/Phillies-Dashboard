@@ -174,11 +174,27 @@
     const workloadLeader = [...pitcherInsights].sort((a, b) => b.pitchCount - a.pitchCount)[0];
 
     if (home) {
-      home.innerHTML = [
-        strikeoutLeader ? pitcherFeatureCard(strikeoutLeader.pitcher, "MOST STRIKEOUTS", `${strikeoutLeader.strikeouts} strikeouts ended in this pitch data`) : null,
-        velocityLeader ? pitcherFeatureCard(velocityLeader.pitcher, "FASTEST AVERAGE VELOCITY", `${format(velocityLeader.averageVelocity)} mph average release speed`) : null,
-        workloadLeader ? pitcherFeatureCard(workloadLeader.pitcher, "MOST TRACKED PITCHES", `${workloadLeader.pitchCount.toLocaleString()} pitches tracked`) : null
-      ].filter(Boolean).join("");
+      const featuredNames = [
+        "Luzardo, Jesús",
+        "Duran, Jhoan",
+        "Wheeler, Zack",
+        "Sánchez, Cristopher"
+      ];
+      const featuredPitchers = featuredNames
+        .map((name) => pitchers.find((pitcher) => pitcher.name === name))
+        .filter(Boolean);
+      home.innerHTML = featuredPitchers.map((pitcher) => {
+        const insight = pitcherInsights.find((item) => item.pitcher.id === pitcher.id);
+        const speeds = pitcher.rows.map((row) => number(row.release_speed)).filter((value) => value !== null);
+        const label = pitcher.name === "Duran, Jhoan" ? "PHILLIES RELIEVER"
+          : pitcher.name === "Wheeler, Zack" ? "PHILLIES STARTER"
+          : "PHILLIES PITCHER";
+        return pitcherFeatureCard(
+          pitcher,
+          label,
+          `${insight.strikeouts} strikeouts · ${format(mean(speeds))} mph avg. velocity`
+        );
+      }).join("");
     }
     if (all) all.innerHTML = pitchers.map(pitcherCard).join("");
     const pitcherCount = document.querySelector("#season-pitchers");
