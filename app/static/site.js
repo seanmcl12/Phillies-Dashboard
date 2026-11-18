@@ -120,20 +120,50 @@
     }).sort((a, b) => b.count - a.count);
   }
 
-  function pitcherFeatureCard(pitcher, label, value) {
-    return `<a class="pitcher-card pitcher-feature-card" href="/pitchers/${encodeURIComponent(pitcher.id)}">
-      <div class="pitcher-photo-wrap">
-        <img class="pitcher-photo" src="${playerPhoto(pitcher.id)}" alt="${escapeHtml(pitcher.name)}" loading="lazy"
-          onerror="this.hidden=true;this.nextElementSibling.hidden=false">
-        <span class="photo-fallback" hidden>${escapeHtml(pitcher.name.split(" ").map((part) => part[0]).join("").slice(0, 2))}</span>
-      </div>
-      <div class="pitcher-card-copy">
-        <span class="pitcher-card-kicker">${escapeHtml(label)}</span>
-        <h3>${escapeHtml(pitcher.name)}</h3>
-        <p>${escapeHtml(value)}</p>
-        <span class="card-arrow" aria-hidden="true">↗</span>
-      </div>
-    </a>`;
+  function pitcherShowcaseCard(pitcher, index, insight) {
+    const arsenal = pitchStats(pitcher.rows).slice(0, 3);
+    const pitchRows = arsenal.map((pitch, pitchIndex) => {
+      const share = pitcher.rows.length ? pitch.count / pitcher.rows.length * 100 : 0;
+      return `<div class="arsenal-row">
+        <span class="arsenal-name">${escapeHtml(pitchName(pitch.code))}</span>
+        <span class="arsenal-bar" aria-label="${format(share)} percent of pitches">
+          <span class="arsenal-bar-fill arsenal-color-${pitchIndex + 1}" style="width:${Math.max(share, 1)}%"></span>
+        </span>
+        <span class="arsenal-share">${format(share)}%</span>
+        <span class="arsenal-velocity">${format(pitch.velocity)} mph</span>
+      </div>`;
+    }).join("");
+    const initials = pitcher.name.split(" ").map((part) => part[0]).join("").slice(0, 2);
+    return `<article class="showcase-card showcase-accent-${index + 1}">
+      <a class="showcase-card-main" href="/pitchers/${encodeURIComponent(pitcher.id)}">
+        <div class="showcase-player">
+          <div class="showcase-photo-wrap">
+            <img class="showcase-photo" src="${playerPhoto(pitcher.id)}" alt="${escapeHtml(pitcher.name)}" loading="lazy"
+              onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+            <span class="photo-fallback showcase-photo-fallback" hidden>${escapeHtml(initials)}</span>
+          </div>
+          <div class="showcase-player-copy">
+            <span class="pitcher-card-kicker">PHILLIES PITCHER · 2025 SEASON</span>
+            <h3>${escapeHtml(pitcher.name)}</h3>
+            <p>2025 regular season · ${pitcher.rows.length.toLocaleString()} tracked pitches</p>
+          </div>
+          <span class="showcase-season-badge">2025 DATA</span>
+        </div>
+        <div class="showcase-season-line">
+          <p class="showcase-label">SEASON LINE · TRACKED PITCH DATA</p>
+          <div class="showcase-stats">
+            <div><strong>${insight.strikeouts.toLocaleString()}</strong><span>STRIKEOUTS</span></div>
+            <div><strong>${pitcher.rows.length.toLocaleString()}</strong><span>PITCHES</span></div>
+            <div><strong>${format(insight.averageVelocity)}</strong><span>AVG. MPH</span></div>
+          </div>
+        </div>
+        <div class="showcase-arsenal">
+          <p class="showcase-label">ARSENAL SNAPSHOT</p>
+          ${pitchRows || `<p class="empty-clips">No pitch mix data available.</p>`}
+        </div>
+      </a>
+      <a class="showcase-footer" href="/pitchers/${encodeURIComponent(pitcher.id)}">View pitcher profile <span aria-hidden="true">↗</span></a>
+    </article>`;
   }
 
   function pitcherCard(pitcher) {
@@ -174,26 +204,13 @@
     const workloadLeader = [...pitcherInsights].sort((a, b) => b.pitchCount - a.pitchCount)[0];
 
     if (home) {
-      const featuredNames = [
-        "Luzardo, Jesús",
-        "Duran, Jhoan",
-        "Wheeler, Zack",
-        "Sánchez, Cristopher"
-      ];
-      const featuredPitchers = featuredNames
-        .map((name) => pitchers.find((pitcher) => pitcher.name === name))
+      const featuredIds = [554430, 666200, 650911];
+      const featuredPitchers = featuredIds
+        .map((id) => pitchers.find((pitcher) => pitcher.id === id))
         .filter(Boolean);
-      home.innerHTML = featuredPitchers.map((pitcher) => {
+      home.innerHTML = featuredPitchers.map((pitcher, index) => {
         const insight = pitcherInsights.find((item) => item.pitcher.id === pitcher.id);
-        const speeds = pitcher.rows.map((row) => number(row.release_speed)).filter((value) => value !== null);
-        const label = pitcher.name === "Duran, Jhoan" ? "PHILLIES RELIEVER"
-          : pitcher.name === "Wheeler, Zack" ? "PHILLIES STARTER"
-          : "PHILLIES PITCHER";
-        return pitcherFeatureCard(
-          pitcher,
-          label,
-          `${insight.strikeouts} strikeouts · ${format(mean(speeds))} mph avg. velocity`
-        );
+        return pitcherShowcaseCard(pitcher, index, insight);
       }).join("");
     }
     if (all) all.innerHTML = pitchers.map(pitcherCard).join("");
