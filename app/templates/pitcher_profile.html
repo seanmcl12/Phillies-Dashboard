@@ -11,6 +11,40 @@
   <div class="summary-grid" id="pitcher-summary"></div>
   <section class="panel content-section">
     <div class="section-heading compact-heading">
+      <div><p class="eyebrow eyebrow-dark">MONITORING CONTEXT</p><h2>Workload and health context</h2></div>
+    </div>
+    <p class="monitoring-disclaimer">These are monitoring signals based on tracked pitching activity, not medical conclusions or injury assessments.</p>
+    <div class="workload-grid" id="pitcher-workload"></div>
+  </section>
+  <section class="panel content-section">
+    <div class="section-heading compact-heading">
+      <div><p class="eyebrow eyebrow-dark">COACHING SUMMARY</p><h2>How he is doing</h2></div>
+    </div>
+    <label class="field-label" for="pitcher-summary-notes">Short summary</label>
+    <textarea id="pitcher-summary-notes" class="profile-textarea" rows="4" placeholder="Add a concise update on usage, execution or areas to monitor…"></textarea>
+    <p class="save-status" id="summary-save-status" aria-live="polite"></p>
+  </section>
+  <section class="panel content-section">
+    <div class="section-heading compact-heading">
+      <div><p class="eyebrow eyebrow-dark">VIDEO AND NOTES</p><h2>Clips linked to pitches or at-bats</h2></div>
+    </div>
+    <form class="clip-form" id="clip-form">
+      <label class="field-label" for="clip-reference">Pitch or at-bat reference
+        <input id="clip-reference" type="text" placeholder="Example: 7th inning, AB 42, pitch 3">
+      </label>
+      <label class="field-label" for="clip-url">Video link
+        <input id="clip-url" type="url" placeholder="https://">
+      </label>
+      <label class="field-label clip-notes-field" for="clip-notes">Observations
+        <textarea id="clip-notes" rows="3" placeholder="Add coach or analyst observations…"></textarea>
+      </label>
+      <button class="button save-button" type="submit">Add clip and notes</button>
+    </form>
+    <p class="save-status" id="clip-save-status" aria-live="polite"></p>
+    <div class="clip-list" id="pitcher-clips"></div>
+  </section>
+  <section class="panel content-section">
+    <div class="section-heading compact-heading">
       <div><p class="eyebrow eyebrow-dark">PITCH MIX</p><h2>Arsenal &amp; results</h2></div>
     </div>
     <div class="table-wrap" id="pitcher-arsenal"></div>

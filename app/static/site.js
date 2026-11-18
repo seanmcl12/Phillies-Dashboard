@@ -222,6 +222,131 @@
     </svg>`;
   }
 
+  function workloadContext(pitcher) {
+    const appearances = new Map();
+    for (const row of pitcher.rows) {
+      if (!appearances.has(row.game_pk)) appearances.set(row.game_pk, []);
+      appearances.get(row.game_pk).push(row);
+    }
+    const outingDates = [...appearances.values()]
+      .map((outing) => new Date(`${outing[0].game_date}T12:00:00Z`))
+      .filter((date) => !Number.isNaN(date.getTime()))
+      .sort((a, b) => b - a);
+    const uniqueDates = [...new Set(outingDates.map((date) => date.toISOString().slice(0, 10)))]
+      .map((date) => new Date(`${date}T12:00:00Z`));
+
+    const latest = uniqueDates[0] || null;
+    const restDays = uniqueDates.length > 1
+      ? Math.round((uniqueDates[0] - uniqueDates[1]) / 86400000)
+      : null;
+    const pitchCounts = [...appearances.values()].map((outing) => outing.length);
+    const totalPitches = pitcher.rows.length;
+    const maxPitches = pitchCounts.length ? Math.max(...pitchCounts) : 0;
+    const averagePitches = pitchCounts.length ? Math.round(totalPitches / pitchCounts.length) : 0;
+    const sevenDayStart = latest ? new Date(latest) : null;
+    if (sevenDayStart) sevenDayStart.setUTCDate(sevenDayStart.getUTCDate() - 6);
+    const recentPitches = latest
+      ? pitcher.rows.filter((row) => {
+          const date = new Date(`${row.game_date}T12:00:00Z`);
+          return date >= sevenDayStart && date <= latest;
+        }).length
+      : 0;
+    const recentOutings = latest
+      ? uniqueDates.filter((date) => date >= sevenDayStart && date <= latest).length
+      : 0;
+
+    return {
+      restDays,
+      appearances: appearances.size,
+      totalPitches,
+      averagePitches,
+      maxPitches,
+      recentPitches,
+      recentOutings
+    };
+  }
+
+  function profileStorageKey(pitcherId, kind) {
+    return `phillies-pitcher-profile:${pitcherId}:${kind}`;
+  }
+
+  function setupPitcherNotes(pitcherId) {
+    const summary = document.querySelector("#pitcher-summary-notes");
+    const summaryStatus = document.querySelector("#summary-save-status");
+    const clipForm = document.querySelector("#clip-form");
+    const clipList = document.querySelector("#pitcher-clips");
+    const clipStatus = document.querySelector("#clip-save-status");
+    if (!summary || !clipForm || !clipList) return;
+
+    const summaryKey = profileStorageKey(pitcherId, "summary");
+    const clipsKey = profileStorageKey(pitcherId, "clips");
+    let clips = [];
+    try {
+      summary.value = localStorage.getItem(summaryKey) || "";
+      clips = JSON.parse(localStorage.getItem(clipsKey) || "[]");
+      if (!Array.isArray(clips)) clips = [];
+    } catch (_) {
+      clips = [];
+    }
+
+    let saveTimer;
+    summary.addEventListener("input", () => {
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(() => {
+        localStorage.setItem(summaryKey, summary.value);
+        summaryStatus.textContent = "Summary saved on this device.";
+      }, 300);
+    });
+
+    const renderClips = () => {
+      if (!clips.length) {
+        clipList.innerHTML = `<p class="empty-clips">No clips or observations have been added yet.</p>`;
+        return;
+      }
+      clipList.innerHTML = clips.map((clip, index) => `
+        <article class="clip-card">
+          <a href="${escapeHtml(clip.url)}" target="_blank" rel="noreferrer">${escapeHtml(clip.reference || "Pitch / at-bat clip")}</a>
+          <button class="clip-remove" type="button" data-clip-index="${index}" aria-label="Remove clip">Remove</button>
+          ${clip.notes ? `<p>${escapeHtml(clip.notes)}</p>` : ""}
+        </article>
+      `).join("");
+      clipList.querySelectorAll(".clip-remove").forEach((button) => {
+        button.addEventListener("click", () => {
+          clips.splice(Number(button.dataset.clipIndex), 1);
+          localStorage.setItem(clipsKey, JSON.stringify(clips));
+          renderClips();
+          clipStatus.textContent = "Clip removed.";
+        });
+      });
+    };
+
+    clipForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const reference = document.querySelector("#clip-reference").value.trim();
+      const url = document.querySelector("#clip-url").value.trim();
+      const notes = document.querySelector("#clip-notes").value.trim();
+      if (!reference && !url) {
+        clipStatus.textContent = "Add a pitch/at-bat reference or video link.";
+        return;
+      }
+      if (url) {
+        try {
+          const parsed = new URL(url);
+          if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Invalid protocol");
+        } catch (_) {
+          clipStatus.textContent = "Enter a valid http or https video link.";
+          return;
+        }
+      }
+      clips.unshift({ reference, url: url || "#", notes });
+      localStorage.setItem(clipsKey, JSON.stringify(clips));
+      clipForm.reset();
+      clipStatus.textContent = "Clip and observations saved on this device.";
+      renderClips();
+    });
+    renderClips();
+  }
+
   function renderPitcherProfile(rows) {
     const profile = document.querySelector("#pitcher-profile");
     if (!profile) return;
@@ -247,9 +372,29 @@
       ["Pitch types", types.length],
       ["Strikeouts", strikeouts.toLocaleString()]
     ].map(([label, value]) => `<div class="summary-card"><span>${label}</span><strong>${value}</strong></div>`).join("");
+    const workload = workloadContext(pitcher);
+    document.querySelector("#pitcher-workload").innerHTML = `
+      <article class="workload-card">
+        <h3>Rest between outings</h3>
+        <strong>${workload.restDays === null ? "—" : `${workload.restDays} ${workload.restDays === 1 ? "day" : "days"}`}</strong>
+        <p>${workload.restDays === null
+          ? "A prior tracked outing is needed to estimate a rest interval."
+          : "Gap between his two most recent tracked game dates. Use as an activity-monitoring signal."}</p>
+      </article>
+      <article class="workload-card">
+        <h3>Season workload</h3>
+        <div class="workload-stats">
+          <div class="workload-stat"><span>Tracked outings</span><strong>${workload.appearances}</strong></div>
+          <div class="workload-stat"><span>Total pitches</span><strong>${workload.totalPitches.toLocaleString()}</strong></div>
+          <div class="workload-stat"><span>Avg. per outing</span><strong>${workload.averagePitches}</strong></div>
+          <div class="workload-stat"><span>Highest outing</span><strong>${workload.maxPitches}</strong></div>
+        </div>
+        <p>Recent 7-day activity: ${workload.recentPitches.toLocaleString()} pitches across ${workload.recentOutings} ${workload.recentOutings === 1 ? "outing" : "outings"}.</p>
+      </article>`;
     const table = document.querySelector("#pitcher-arsenal");
     table.innerHTML = pitchTable(types);
     document.querySelector("#pitcher-location").innerHTML = locationSvg(pitcher.rows);
+    setupPitcherNotes(pitcher.id);
   }
 
   function pitchTable(types) {
