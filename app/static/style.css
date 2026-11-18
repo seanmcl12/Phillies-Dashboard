@@ -102,20 +102,18 @@ button, select { font: inherit; }
 .pitcher-card h3 { margin: 7px 0 8px; overflow-wrap: anywhere; color: var(--accent-dark); font-size: 1.18rem; line-height: 1.15; }
 .pitcher-card p { margin: 0; color: var(--muted-text); font-size: .82rem; line-height: 1.45; }
 .card-arrow { position: absolute; top: 13px; right: 14px; color: var(--accent-blue); font-size: 1.1rem; font-weight: 850; }
-.showcase-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-top: 7px solid var(--accent); border-radius: 9px; background: white; box-shadow: 0 8px 26px rgb(26 35 45 / 7%); }
-.showcase-accent-1 { --showcase-accent: #6f263d; border-top-color: #6f263d; }
-.showcase-accent-2 { --showcase-accent: #4289c7; border-top-color: #4289c7; }
-.showcase-accent-3 { --showcase-accent: #d3a127; border-top-color: #d3a127; }
+.showcase-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-top: 7px solid #E81828; border-radius: 9px; background: white; box-shadow: 0 8px 26px rgb(26 35 45 / 7%); }
+.showcase-card:hover { border-color: #E81828; box-shadow: var(--shadow); transform: translateY(-3px); }
 .showcase-card-main { display: block; min-width: 0; padding: 18px 18px 12px; color: inherit; text-decoration: none; }
 .showcase-player { position: relative; display: flex; min-height: 84px; align-items: center; gap: 13px; padding-right: 60px; }
 .showcase-photo-wrap { display: grid; flex: 0 0 68px; width: 68px; height: 74px; place-items: center; overflow: hidden; border-radius: 7px; background: #f0eff0; }
 .showcase-photo { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.showcase-photo-fallback { color: var(--accent); font-size: 1.1rem; }
+.showcase-photo-fallback { color: #E81828; font-size: 1.1rem; }
 .showcase-player-copy { min-width: 0; }
 .showcase-player-copy .pitcher-card-kicker { font-size: .56rem; }
 .showcase-player-copy h3 { margin: 5px 0 4px; color: var(--text); font-size: 1.22rem; }
 .showcase-player-copy p { margin: 0; color: var(--muted-text); font-size: .68rem; }
-.showcase-season-badge { position: absolute; top: 0; right: 0; padding: 5px 7px; border-radius: 20px; color: #52733e; background: #edf5eb; font-size: .55rem; font-weight: 850; white-space: nowrap; }
+.showcase-season-badge { position: absolute; top: 0; right: 0; padding: 5px 7px; border-radius: 20px; color: #E81828; background: #fdebed; font-size: .55rem; font-weight: 850; white-space: nowrap; }
 .showcase-season-line { margin-top: 15px; padding-block: 14px; border-top: 1px solid #ece9e9; border-bottom: 1px solid #ece9e9; }
 .showcase-label { margin: 0 0 12px; color: var(--muted-text); font-size: .58rem; font-weight: 850; letter-spacing: .15em; }
 .showcase-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -128,12 +126,10 @@ button, select { font: inherit; }
 .arsenal-name { overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
 .arsenal-bar { height: 7px; overflow: hidden; border-radius: 8px; background: #ece9e9; }
 .arsenal-bar-fill { display: block; height: 100%; border-radius: inherit; }
-.arsenal-color-1 { background: #c8102e; }
-.arsenal-color-2 { background: #4289c7; }
-.arsenal-color-3 { background: #d3a127; }
+.arsenal-bar-fill { background: #E81828; }
 .arsenal-share, .arsenal-velocity { color: var(--muted-text); text-align: right; white-space: nowrap; }
-.showcase-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding: 12px 18px; border-top: 1px solid #ece9e9; color: var(--accent); background: #fcfafb; font-size: .71rem; font-weight: 850; text-decoration: none; }
-.showcase-footer:hover { background: #f5eef1; }
+.showcase-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding: 12px 18px; border-top: 1px solid #ece9e9; color: #E81828; background: #fcfafb; font-size: .71rem; font-weight: 850; text-decoration: none; }
+.showcase-footer:hover { background: #fff1f2; }
 .showcase-footer span { font-size: 1rem; }
 .loading-message, .empty-message, .error-message { grid-column: 1 / -1; margin: 0; padding: 20px; border-radius: 7px; color: var(--muted-text); background: white; }
 .error-message { border: 1px solid #d59bab; color: #7a1e35; background: #fff5f7; }
