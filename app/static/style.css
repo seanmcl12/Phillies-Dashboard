@@ -297,9 +297,25 @@ tbody th { color: var(--accent-dark); }
 .analysis-card h3 { margin: 2px 0 4px; color: var(--accent-dark); font-size: 1.45rem; letter-spacing: -.03em; }
 .analysis-card > p:not(.eyebrow) { margin: 0; color: var(--muted-text); line-height: 1.55; }
 .analysis-card > span { align-self: end; margin-top: 10px; color: var(--accent); font-weight: 800; }
-.lineup-table th:first-child, .lineup-table td:first-child { width: 44px; color: var(--muted-text); text-align: center; }
-.lineup-batter { display: inline-flex; align-items: center; gap: 10px; }
-.lineup-batter img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; object-position: center top; background: #e6f2fb; }
+.batter-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.batter-card { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-left: 5px solid var(--accent); border-radius: 8px; background: white; box-shadow: 0 6px 20px rgb(26 35 45 / 6%); }
+.batter-card-main { padding: 15px 16px 12px; }
+.batter-card-player { position: relative; display: flex; min-height: 66px; align-items: center; gap: 12px; padding-right: 66px; }
+.batter-card-photo-wrap { display: grid; flex: 0 0 58px; width: 58px; height: 62px; place-items: center; overflow: hidden; border-radius: 6px; background: #f0eff0; }
+.batter-card-photo-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.batter-card-fallback { color: var(--accent); font-size: 1rem; }
+.batter-card-name { min-width: 0; }
+.batter-card-kicker { color: var(--accent); font-size: .59rem; font-weight: 850; letter-spacing: .13em; }
+.batter-card-name h3 { margin: 4px 0 3px; overflow-wrap: anywhere; color: var(--text); font-size: 1rem; line-height: 1.2; }
+.batter-card-name p { margin: 0; color: var(--muted-text); font-size: .69rem; }
+.batter-card-badge { position: absolute; top: 0; right: 0; padding: 5px 8px; border-radius: 15px; color: var(--accent); background: #f8e9ed; font-size: .56rem; font-weight: 850; white-space: nowrap; }
+.batter-card-statline { margin-top: 12px; padding-block: 12px 10px; border-top: 1px solid #ece9e9; border-bottom: 1px solid #ece9e9; }
+.batter-card-label { margin: 0 0 8px; color: var(--muted-text); font-size: .56rem; font-weight: 850; letter-spacing: .14em; }
+.batter-card-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.batter-card-stats > div { display: grid; gap: 3px; }
+.batter-card-stats strong { color: var(--text); font-size: 1.28rem; letter-spacing: -.03em; }
+.batter-card-stats span { color: var(--muted-text); font-size: .57rem; }
+.batter-card-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 12px; margin-top: 10px; color: var(--muted-text); font-size: .64rem; line-height: 1.4; }
 
 .monitoring-disclaimer { margin: -4px 0 18px; padding: 12px 14px; border-left: 4px solid var(--accent-blue); border-radius: 4px; color: var(--muted-text); background: #f1f7fc; font-size: .86rem; line-height: 1.5; }
 .workload-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -351,6 +367,7 @@ tbody th { color: var(--accent-dark); }
   .game-log-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .game-detail-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .glossary-featured { grid-template-columns: 1fr; }
+  .batter-card-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   .site-header { align-items: flex-start; flex-direction: column; gap: 12px; padding: 13px 22px 15px; }

@@ -800,11 +800,9 @@
 
   function opponentLineupTable(matchupRows) {
     const hitters = new Map();
-    const noAtBatEvents = new Set([
-      "walk", "intent_walk", "hit_by_pitch", "sac_fly", "sac_bunt"
-    ]);
+    const noAtBatEvents = new Set(["walk", "intent_walk", "hit_by_pitch", "sac_fly", "sac_bunt"]);
+    const onBaseEvents = new Set(["walk", "intent_walk", "hit_by_pitch"]);
     const hitEvents = new Set(["single", "double", "triple", "home_run"]);
-
     for (const row of terminalPitches(matchupRows)) {
       if (!row.batter) continue;
       if (!hitters.has(row.batter)) {
@@ -814,14 +812,36 @@
           plateAppearances: 0,
           atBats: 0,
           hits: 0,
-          strikeouts: 0
+          strikeouts: 0,
+          homeRuns: 0,
+          totalBases: 0,
+          walks: 0,
+          hitByPitch: 0,
+          sacrificeFlies: 0,
+          pitcherHand: { R: { atBats: 0, hits: 0, bases: 0, walks: 0, hbp: 0, sacrificeFlies: 0 }, L: { atBats: 0, hits: 0, bases: 0, walks: 0, hbp: 0, sacrificeFlies: 0 } }
         });
       }
       const hitter = hitters.get(row.batter);
+      const hand = row.p_throws === "R" || row.p_throws === "L" ? row.p_throws : null;
+      const handStats = hand ? hitter.pitcherHand[hand] : null;
       hitter.plateAppearances += 1;
       if (!noAtBatEvents.has(row.events)) hitter.atBats += 1;
       if (hitEvents.has(row.events)) hitter.hits += 1;
       if (row.events === "strikeout" || row.events === "strikeout_double_play") hitter.strikeouts += 1;
+      const bases = { single: 1, double: 2, triple: 3, home_run: 4 }[row.events] || 0;
+      hitter.totalBases += bases;
+      if (row.events === "home_run") hitter.homeRuns += 1;
+      if (row.events === "walk" || row.events === "intent_walk") hitter.walks += 1;
+      if (row.events === "hit_by_pitch") hitter.hitByPitch += 1;
+      if (row.events === "sac_fly") hitter.sacrificeFlies += 1;
+      if (handStats) {
+        if (!noAtBatEvents.has(row.events)) handStats.atBats += 1;
+        if (hitEvents.has(row.events)) handStats.hits += 1;
+        handStats.bases += bases;
+        if (row.events === "walk" || row.events === "intent_walk") handStats.walks += 1;
+        if (row.events === "hit_by_pitch") handStats.hbp += 1;
+        if (row.events === "sac_fly") handStats.sacrificeFlies += 1;
+      }
     }
 
     const lineup = [...hitters.values()]
@@ -829,14 +849,58 @@
       .slice(0, 9);
     if (!lineup.length) return `<p class="empty-message">No completed plate appearances were found.</p>`;
 
-    return `<table class="lineup-table"><thead><tr><th>#</th><th>Batter</th><th>PA</th><th>AB</th><th>H</th><th>AVG</th><th>Strikeouts</th></tr></thead>
-      <tbody>${lineup.map((hitter, index) => {
-        const average = hitter.atBats ? hitter.hits / hitter.atBats : null;
-        return `<tr><td>${index + 1}</td>
-          <th><span class="lineup-batter"><img src="${playerPhoto(hitter.id)}" alt="" onerror="this.hidden=true"><span>${escapeHtml(hitter.name)}</span></span></th>
-          <td>${hitter.plateAppearances}</td><td>${hitter.atBats}</td><td>${hitter.hits}</td>
-          <td>${average === null ? "—" : average.toFixed(3).replace(/^0/, "")}</td><td>${hitter.strikeouts}</td></tr>`;
-      }).join("")}</tbody></table>`;
+    const formatRate = (value) => value === null ? "—" : value.toFixed(3).replace(/^0/, "");
+    const rateLine = (stats) => {
+      const average = stats.atBats ? stats.hits / stats.atBats : null;
+      const hitByPitch = stats.hbp ?? stats.hitByPitch ?? 0;
+      const onBaseDenominator = stats.atBats + stats.walks + hitByPitch + stats.sacrificeFlies;
+      const onBase = onBaseDenominator
+        ? (stats.hits + stats.walks + hitByPitch) / onBaseDenominator
+        : null;
+      const totalBases = stats.bases ?? stats.totalBases ?? 0;
+      const slugging = stats.atBats ? totalBases / stats.atBats : null;
+      return { average, ops: onBase === null || slugging === null ? null : onBase + slugging };
+    };
+
+    return lineup.map((hitter, index) => {
+      const overall = rateLine(hitter);
+      const rightHanded = rateLine(hitter.pitcherHand.R);
+      const leftHanded = rateLine(hitter.pitcherHand.L);
+      const initials = hitter.name.split(" ").map((part) => part[0]).join("").slice(0, 2);
+      const split = [
+        hitter.pitcherHand.R.atBats ? `vs RHP ${formatRate(rightHanded.average)}` : null,
+        hitter.pitcherHand.L.atBats ? `vs LHP ${formatRate(leftHanded.average)}` : null
+      ].filter(Boolean).join(" · ");
+      return `<article class="batter-card">
+        <div class="batter-card-main">
+          <div class="batter-card-player">
+            <div class="batter-card-photo-wrap">
+              <img src="${playerPhoto(hitter.id)}" alt="" loading="lazy"
+                onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+              <span class="photo-fallback batter-card-fallback" hidden>${escapeHtml(initials)}</span>
+            </div>
+            <div class="batter-card-name">
+              <span class="batter-card-kicker">#${index + 1} · 2025 MATCHUP</span>
+              <h3>${escapeHtml(hitter.name)}</h3>
+              <p>${hitter.plateAppearances} ${hitter.plateAppearances === 1 ? "plate appearance" : "plate appearances"} vs. Phillies pitching</p>
+            </div>
+            <span class="batter-card-badge">${hitter.homeRuns ? `${hitter.homeRuns} HR` : "BATTER"}</span>
+          </div>
+          <div class="batter-card-statline">
+            <p class="batter-card-label">2025 HITTING · TRACKED APPEARANCES</p>
+            <div class="batter-card-stats">
+              <div><strong>${formatRate(overall.average)}</strong><span>AVG</span></div>
+              <div><strong>${formatRate(overall.ops)}</strong><span>OPS</span></div>
+              <div><strong>${hitter.homeRuns}</strong><span>HR</span></div>
+            </div>
+          </div>
+          <div class="batter-card-footer">
+            <span>${hitter.hits} H · ${hitter.atBats} AB · ${hitter.strikeouts} K</span>
+            <span>${split || "No handedness split available"}</span>
+          </div>
+        </div>
+      </article>`;
+    }).join("");
   }
 
   function renderOpponentAnalysis(rows) {

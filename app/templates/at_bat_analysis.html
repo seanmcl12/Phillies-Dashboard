@@ -13,10 +13,12 @@
   <div class="summary-grid" id="opponent-summary"></div>
   <section class="panel content-section">
     <div class="section-heading compact-heading">
-      <div><p class="eyebrow eyebrow-dark">LINEUP VIEW</p><h2>Most-used lineup against Phillies pitching</h2></div>
+      <div><p class="eyebrow eyebrow-dark">MATCHUP LINEUP</p><h2>Top batters against Phillies pitching</h2></div>
     </div>
-    <p class="chart-description">The nine batters with the most completed plate appearances in this season matchup. This is an aggregate lineup view, not an exact starting lineup for a specific game.</p>
-    <div class="table-wrap" id="opponent-lineup"></div>
+    <p class="chart-description">Batters are ranked by completed plate appearances in this 2025 matchup. AVG, OPS and home runs summarize their tracked performance; this aggregate view is not a confirmed starting lineup for a specific game.</p>
+    <div class="batter-card-grid" id="opponent-lineup" aria-live="polite">
+      <p class="loading-message">Loading matchup batters…</p>
+    </div>
   </section>
   <section class="panel content-section">
     <p class="eyebrow eyebrow-dark">PITCH RESULTS</p>
