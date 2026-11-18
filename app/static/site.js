@@ -467,6 +467,47 @@
     if (count) count.textContent = opponents.length;
   }
 
+  function opponentLineupTable(matchupRows) {
+    const hitters = new Map();
+    const noAtBatEvents = new Set([
+      "walk", "intent_walk", "hit_by_pitch", "sac_fly", "sac_bunt"
+    ]);
+    const hitEvents = new Set(["single", "double", "triple", "home_run"]);
+
+    for (const row of terminalPitches(matchupRows)) {
+      if (!row.batter) continue;
+      if (!hitters.has(row.batter)) {
+        hitters.set(row.batter, {
+          id: row.batter,
+          name: row.batter_name || `Batter ${row.batter}`,
+          plateAppearances: 0,
+          atBats: 0,
+          hits: 0,
+          strikeouts: 0
+        });
+      }
+      const hitter = hitters.get(row.batter);
+      hitter.plateAppearances += 1;
+      if (!noAtBatEvents.has(row.events)) hitter.atBats += 1;
+      if (hitEvents.has(row.events)) hitter.hits += 1;
+      if (row.events === "strikeout" || row.events === "strikeout_double_play") hitter.strikeouts += 1;
+    }
+
+    const lineup = [...hitters.values()]
+      .sort((a, b) => b.plateAppearances - a.plateAppearances || a.name.localeCompare(b.name))
+      .slice(0, 9);
+    if (!lineup.length) return `<p class="empty-message">No completed plate appearances were found.</p>`;
+
+    return `<table class="lineup-table"><thead><tr><th>#</th><th>Batter</th><th>PA</th><th>AB</th><th>H</th><th>AVG</th><th>Strikeouts</th></tr></thead>
+      <tbody>${lineup.map((hitter, index) => {
+        const average = hitter.atBats ? hitter.hits / hitter.atBats : null;
+        return `<tr><td>${index + 1}</td>
+          <th><span class="lineup-batter"><img src="${playerPhoto(hitter.id)}" alt="" onerror="this.hidden=true"><span>${escapeHtml(hitter.name)}</span></span></th>
+          <td>${hitter.plateAppearances}</td><td>${hitter.atBats}</td><td>${hitter.hits}</td>
+          <td>${average === null ? "—" : average.toFixed(3).replace(/^0/, "")}</td><td>${hitter.strikeouts}</td></tr>`;
+      }).join("")}</tbody></table>`;
+  }
+
   function renderOpponentAnalysis(rows) {
     const title = document.querySelector("#opponent-title");
     if (!title) return;
@@ -476,6 +517,8 @@
       document.querySelector("#opponent-intro").textContent =
         `No 2025 pitch data was found for ${teamNames[code] || code}.`;
       document.querySelector("#opponent-summary").innerHTML = "";
+      document.querySelector("#opponent-lineup").innerHTML =
+        `<p class="empty-message">No lineup data was found.</p>`;
       showError(document.querySelector("#opponent-chart"), "Select an opponent from the matchup list to view available data.");
       return;
     }
@@ -492,6 +535,7 @@
       ["Strikeouts", strikeouts.toLocaleString()],
       ["Completed plate appearances", terminal.length.toLocaleString()]
     ].map(([label, value]) => `<div class="summary-card"><span>${label}</span><strong>${value}</strong></div>`).join("");
+    document.querySelector("#opponent-lineup").innerHTML = opponentLineupTable(matchupRows);
     document.querySelector("#opponent-chart").innerHTML = svgBars(types, "strikeoutRate");
     document.querySelector("#opponent-arsenal").innerHTML = pitchTable(types);
   }
