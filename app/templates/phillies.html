@@ -22,8 +22,22 @@
 <section class="section-shell season-overview" aria-label="Season overview">
   <div class="overview-item"><strong id="season-pitches">—</strong><span>pitches tracked</span></div>
   <div class="overview-item"><strong id="season-pitchers">—</strong><span>pitchers</span></div>
+  <div class="overview-item"><strong id="season-strikeout-rate">—</strong><span>strikeout rate</span></div>
+  <div class="overview-item"><strong id="season-whiff-rate">—</strong><span>whiff rate</span></div>
   <div class="overview-item"><strong id="season-opponents">—</strong><span>opponents</span></div>
-  <p class="data-note">Built from 2025 regular-season Statcast data</p>
+  <p class="data-note"><strong>2025 regular season</strong> · Baseball Savant / MLB Statcast</p>
+</section>
+
+<section class="section-shell snapshot-section" aria-labelledby="snapshot-title">
+  <div class="section-heading compact-heading">
+    <div>
+      <p class="eyebrow eyebrow-dark">PITCHING SNAPSHOT</p>
+      <h2 id="snapshot-title">What stands out in 2025</h2>
+    </div>
+  </div>
+  <div class="snapshot-grid" id="pitching-snapshot" aria-live="polite">
+    <p class="loading-message">Loading team takeaways…</p>
+  </div>
 </section>
 
 <section class="section-shell content-section" id="pitchers">
@@ -39,17 +53,26 @@
   </div>
 </section>
 
-<section class="feature-band">
-  <div class="section-shell feature-inner">
+<section class="section-shell analysis-section" aria-labelledby="analysis-title">
+  <div class="section-heading compact-heading">
     <div>
-      <p class="eyebrow">GO BEYOND THE BOX SCORE</p>
-      <h2>Every pitch tells a story.</h2>
-      <p>Explore pitch speeds and locations, then see how the Phillies attacked each opponent.</p>
+      <p class="eyebrow eyebrow-dark">EXPLORE THE DATA</p>
+      <h2 id="analysis-title">Choose an analysis area</h2>
     </div>
-    <div class="feature-links">
-      <a class="feature-link" href="{{ url_for('pitch_comparison') }}">Compare pitches <span aria-hidden="true">↗</span></a>
-      <a class="feature-link" href="{{ url_for('opponents') }}">Explore opponents <span aria-hidden="true">↗</span></a>
-    </div>
+  </div>
+  <div class="analysis-grid">
+    <a class="analysis-card" href="{{ url_for('pitch_comparison') }}">
+      <p class="eyebrow eyebrow-dark">PITCH MOVEMENT</p>
+      <h3>Explore pitch movement</h3>
+      <p>Compare velocity, pitch type, whiff rate and location across the staff.</p>
+      <span>Open pitch analysis <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="analysis-card" href="{{ url_for('opponents') }}">
+      <p class="eyebrow eyebrow-dark">TEAM MATCHUPS</p>
+      <h3>Compare against other teams</h3>
+      <p>See Phillies pitch results and the batters faced by opponent.</p>
+      <span>Open team matchups <span aria-hidden="true">→</span></span>
+    </a>
   </div>
 </section>
 {% endblock %}

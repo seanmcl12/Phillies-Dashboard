@@ -120,6 +120,22 @@
     }).sort((a, b) => b.count - a.count);
   }
 
+  function pitcherFeatureCard(pitcher, label, value) {
+    return `<a class="pitcher-card pitcher-feature-card" href="/pitchers/${encodeURIComponent(pitcher.id)}">
+      <div class="pitcher-photo-wrap">
+        <img class="pitcher-photo" src="${playerPhoto(pitcher.id)}" alt="${escapeHtml(pitcher.name)}" loading="lazy"
+          onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+        <span class="photo-fallback" hidden>${escapeHtml(pitcher.name.split(" ").map((part) => part[0]).join("").slice(0, 2))}</span>
+      </div>
+      <div class="pitcher-card-copy">
+        <span class="pitcher-card-kicker">${escapeHtml(label)}</span>
+        <h3>${escapeHtml(pitcher.name)}</h3>
+        <p>${escapeHtml(value)}</p>
+        <span class="card-arrow" aria-hidden="true">↗</span>
+      </div>
+    </a>`;
+  }
+
   function pitcherCard(pitcher) {
     const speeds = pitcher.rows.map((row) => number(row.release_speed)).filter((value) => value !== null);
     return `<a class="pitcher-card" href="/pitchers/${encodeURIComponent(pitcher.id)}">
@@ -141,10 +157,57 @@
     const pitchers = pitcherGroups(rows);
     const home = document.querySelector("#home-pitchers");
     const all = document.querySelector("#all-pitchers");
-    if (home) home.innerHTML = pitchers.slice(0, 8).map(pitcherCard).join("");
+    const pitcherInsights = pitchers.map((pitcher) => {
+      const terminal = terminalPitches(pitcher.rows);
+      const speeds = pitcher.rows.map((row) => number(row.release_speed)).filter((value) => value !== null);
+      return {
+        pitcher,
+        strikeouts: terminal.filter((row) => row.events === "strikeout").length,
+        averageVelocity: mean(speeds),
+        pitchCount: pitcher.rows.length
+      };
+    });
+    const strikeoutLeader = [...pitcherInsights].sort((a, b) => b.strikeouts - a.strikeouts)[0];
+    const velocityLeader = [...pitcherInsights]
+      .filter((item) => item.averageVelocity !== null)
+      .sort((a, b) => b.averageVelocity - a.averageVelocity)[0];
+    const workloadLeader = [...pitcherInsights].sort((a, b) => b.pitchCount - a.pitchCount)[0];
+
+    if (home) {
+      home.innerHTML = [
+        strikeoutLeader ? pitcherFeatureCard(strikeoutLeader.pitcher, "MOST STRIKEOUTS", `${strikeoutLeader.strikeouts} strikeouts ended in this pitch data`) : null,
+        velocityLeader ? pitcherFeatureCard(velocityLeader.pitcher, "FASTEST AVERAGE VELOCITY", `${format(velocityLeader.averageVelocity)} mph average release speed`) : null,
+        workloadLeader ? pitcherFeatureCard(workloadLeader.pitcher, "MOST TRACKED PITCHES", `${workloadLeader.pitchCount.toLocaleString()} pitches tracked`) : null
+      ].filter(Boolean).join("");
+    }
     if (all) all.innerHTML = pitchers.map(pitcherCard).join("");
     const pitcherCount = document.querySelector("#season-pitchers");
     if (pitcherCount) pitcherCount.textContent = pitchers.length;
+    const terminal = terminalPitches(rows);
+    const strikeouts = terminal.filter((row) => row.events === "strikeout").length;
+    const strikeoutRate = terminal.length ? strikeouts / terminal.length * 100 : null;
+    const swings = rows.filter((row) => {
+      const description = String(row.description || "").toLowerCase();
+      return description.includes("swing") || description === "foul" || description === "hit_into_play";
+    }).length;
+    const whiffs = rows.filter((row) => String(row.description || "").toLowerCase().includes("swinging_strike")).length;
+    const whiffRate = swings ? whiffs / swings * 100 : null;
+    const strikeoutRateElement = document.querySelector("#season-strikeout-rate");
+    if (strikeoutRateElement) strikeoutRateElement.textContent = strikeoutRate === null ? "—" : `${format(strikeoutRate)}%`;
+    const whiffRateElement = document.querySelector("#season-whiff-rate");
+    if (whiffRateElement) whiffRateElement.textContent = whiffRate === null ? "—" : `${format(whiffRate)}%`;
+
+    const snapshot = document.querySelector("#pitching-snapshot");
+    if (snapshot) {
+      const pitchTypes = pitchStats(rows).filter((type) => type.whiffRate !== null && type.swings >= 30);
+      const topPitch = [...pitchTypes].sort((a, b) => b.whiffRate - a.whiffRate)[0];
+      const cards = [
+        strikeoutLeader ? `<article class="snapshot-card"><span class="snapshot-stat">${strikeoutLeader.strikeouts}</span><h3>${escapeHtml(strikeoutLeader.pitcher.name)} strikeout leader</h3><p>Strikeouts ending completed plate appearances in the 2025 pitch data.</p></article>` : null,
+        topPitch ? `<article class="snapshot-card"><span class="snapshot-stat">${format(topPitch.whiffRate)}%</span><h3>${escapeHtml(pitchName(topPitch.code))} whiff rate</h3><p>Based on ${topPitch.swings.toLocaleString()} tracked swings.</p></article>` : null,
+        `<article class="snapshot-card"><span class="snapshot-stat">${format(strikeoutRate)}%</span><h3>Plate appearance strikeout rate</h3><p>${strikeouts.toLocaleString()} strikeouts across ${terminal.length.toLocaleString()} completed plate appearances.</p></article>`
+      ].filter(Boolean);
+      snapshot.innerHTML = cards.join("");
+    }
     const select = document.querySelector("#comparison-pitcher");
     if (select) {
       select.innerHTML = `<option value="all">All pitchers</option>` +
