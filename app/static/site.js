@@ -871,7 +871,278 @@
     document.querySelector("#opponent-arsenal").innerHTML = pitchTable(types);
   }
 
+  const gameOuts = {
+    field_out: 1, force_out: 1, grounded_into_double_play: 2,
+    double_play: 2, strikeout: 1, strikeout_double_play: 2,
+    fielders_choice_out: 1, sac_fly: 1, sac_bunt: 1
+  };
+  const hitEvents = new Set(["single", "double", "triple", "home_run"]);
+  const baseValues = { single: 1, double: 2, triple: 3, home_run: 4 };
+
+  function opponentOfGame(rows) {
+    const row = rows[0];
+    if (!row) return null;
+    return row.home_team === "PHI" ? row.away_team : row.home_team;
+  }
+
+  function gameAppearances(rows) {
+    const byGame = new Map();
+    for (const row of rows) {
+      if (!byGame.has(row.game_pk)) byGame.set(row.game_pk, []);
+      byGame.get(row.game_pk).push(row);
+    }
+
+    return [...byGame.entries()].flatMap(([gameId, gameRows]) => {
+      const byPitcher = new Map();
+      for (const row of gameRows) {
+        if (!byPitcher.has(row.pitcher)) byPitcher.set(row.pitcher, []);
+        byPitcher.get(row.pitcher).push(row);
+      }
+      const orderedPitchers = [...byPitcher.entries()].sort((a, b) => {
+        const firstAtBatA = Math.min(...a[1].map((row) => row.at_bat_number));
+        const firstAtBatB = Math.min(...b[1].map((row) => row.at_bat_number));
+        return firstAtBatA - firstAtBatB;
+      });
+      return orderedPitchers.map(([pitcherId, pitcherRows], index) => {
+        const terminals = terminalPitches(pitcherRows);
+        const outs = terminals.reduce((total, row) => total + (gameOuts[row.events] || 0), 0);
+        const strikeouts = terminals.filter((row) =>
+          ["strikeout", "strikeout_double_play"].includes(row.events)).length;
+        const hits = terminals.filter((row) => hitEvents.has(row.events));
+        const atBats = terminals.filter((row) =>
+          !["walk", "intent_walk", "hit_by_pitch", "sac_fly", "sac_bunt"].includes(row.events));
+        const pitchSpeeds = pitcherRows.map((row) => number(row.release_speed)).filter((value) => value !== null);
+        const walks = terminals.filter((row) => ["walk", "intent_walk", "hit_by_pitch"].includes(row.events)).length;
+        return {
+          gameId: Number(gameId),
+          pitcherId: Number(pitcherId),
+          pitcher: displayPlayerName(pitcherRows[0].player_name) || "Phillies pitcher",
+          date: pitcherRows[0].game_date,
+          opponent: opponentOfGame(pitcherRows),
+          venue: pitcherRows[0].home_team === "PHI" ? "Home" : "Away",
+          role: index === 0 ? "Starter" : "Reliever",
+          roleInferred: true,
+          pitchCount: pitcherRows.length,
+          outs,
+          innings: `${Math.floor(outs / 3)}.${outs % 3}`,
+          strikeouts,
+          hits: hits.length,
+          walks,
+          atBats: atBats.length,
+          average: atBats.length ? hits.length / atBats.length : null,
+          slugging: atBats.length
+            ? hits.reduce((total, row) => total + baseValues[row.events], 0) / atBats.length : null,
+          averageVelocity: mean(pitchSpeeds),
+          rows: pitcherRows,
+          terminalRows: terminals
+        };
+      });
+    });
+  }
+
+  function gameLogCellButton(label, key, direction) {
+    return `<button class="sort-button" type="button" data-sort="${key}" aria-label="Sort by ${label}">${label}<span aria-hidden="true">${direction === key ? " ↓" : ""}</span></button>`;
+  }
+
+  function renderGameLog(rows) {
+    const table = document.querySelector("#game-log-table");
+    const status = document.querySelector("#game-log-status");
+    const form = document.querySelector("#game-log-filters");
+    if (!table || !status || !form) return;
+
+    const pitcherSelect = document.querySelector("#game-filter-pitcher");
+    const opponentSelect = document.querySelector("#game-filter-opponent");
+    const roleSelect = document.querySelector("#game-filter-role");
+    const fromDate = document.querySelector("#game-filter-from");
+    const toDate = document.querySelector("#game-filter-to");
+    const seasonSelect = document.querySelector("#game-filter-season");
+    const appearances = gameAppearances(rows);
+    const pitchers = [...new Map(appearances.map((item) => [item.pitcherId, item.pitcher])).entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]));
+    const opponents = [...new Set(appearances.map((item) => item.opponent).filter(Boolean))].sort();
+    pitcherSelect.innerHTML = `<option value="all">All pitchers</option>` +
+      pitchers.map(([id, name]) => `<option value="${id}">${escapeHtml(name)}</option>`).join("");
+    opponentSelect.innerHTML = `<option value="all">All opponents</option>` +
+      opponents.map((code) => `<option value="${escapeHtml(code)}">${escapeHtml(teamNames[code] || code)}</option>`).join("");
+
+    let sortKey = "date";
+    let sortDirection = "desc";
+    const render = () => {
+      const filtered = appearances.filter((item) =>
+        (pitcherSelect.value === "all" || String(item.pitcherId) === pitcherSelect.value) &&
+        (opponentSelect.value === "all" || item.opponent === opponentSelect.value) &&
+        (roleSelect.value === "all" || item.role.toLowerCase() === roleSelect.value) &&
+        (!fromDate.value || item.date >= fromDate.value) &&
+        (!toDate.value || item.date <= toDate.value) &&
+        (!seasonSelect.value || item.date.startsWith(seasonSelect.value))
+      );
+      const factor = sortDirection === "asc" ? 1 : -1;
+      filtered.sort((a, b) => {
+        const left = a[sortKey];
+        const right = b[sortKey];
+        if (typeof left === "number" && typeof right === "number") return (left - right) * factor;
+        return String(left ?? "").localeCompare(String(right ?? "")) * factor;
+      });
+      status.textContent = filtered.length
+        ? `${filtered.length} pitching ${filtered.length === 1 ? "appearance" : "appearances"}`
+        : "No pitching appearances match these filters.";
+      if (!filtered.length) {
+        table.innerHTML = `<p class="empty-message">No results. Try clearing or adjusting the filters.</p>`;
+        return;
+      }
+      table.innerHTML = `<table><thead><tr>
+        <th>${gameLogCellButton("Date", "date", sortDirection === "asc" ? sortKey : "")}</th>
+        <th>${gameLogCellButton("Opponent", "opponent", sortDirection === "asc" ? sortKey : "")}</th><th>Home/Away</th>
+        <th>${gameLogCellButton("Pitcher", "pitcher", sortDirection === "asc" ? sortKey : "")}</th><th>Role</th>
+        <th>${gameLogCellButton("IP*", "outs", sortDirection === "asc" ? sortKey : "")}</th>
+        <th>${gameLogCellButton("Pitches", "pitchCount", sortDirection === "asc" ? sortKey : "")}</th>
+        <th>${gameLogCellButton("K", "strikeouts", sortDirection === "asc" ? sortKey : "")}</th><th>H</th><th>BB/HBP</th><th>Avg velo</th><th>Opponent AVG</th>
+      </tr></thead><tbody>${filtered.map((item) => `<tr>
+        <td><a class="game-log-link" href="/game-log/${item.gameId}/${item.pitcherId}">${escapeHtml(item.date)}</a></td>
+        <td>${escapeHtml(teamNames[item.opponent] || item.opponent || "Unknown")}</td><td>${item.venue}</td>
+        <td>${escapeHtml(item.pitcher)}</td><td>${item.role}<sup>*</sup></td><td>${item.innings}</td>
+        <td>${item.pitchCount}</td><td>${item.strikeouts}</td><td>${item.hits}</td><td>${item.walks}</td>
+        <td>${format(item.averageVelocity)} mph</td><td>${item.average === null ? "—" : item.average.toFixed(3).replace(/^0/, "")}</td>
+      </tr>`).join("")}</tbody></table><p class="table-note">*Role is inferred by appearance order; IP is estimated from recorded outs.</p>`;
+      table.querySelectorAll("button[data-sort]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const nextKey = button.dataset.sort;
+          if (sortKey === nextKey) sortDirection = sortDirection === "asc" ? "desc" : "asc";
+          else {
+            sortKey = nextKey;
+            sortDirection = nextKey === "date" ? "desc" : "asc";
+          }
+          render();
+        });
+      });
+    };
+    form.addEventListener("change", render);
+    fromDate.addEventListener("input", render);
+    toDate.addEventListener("input", render);
+    form.addEventListener("reset", () => window.setTimeout(render, 0));
+    render();
+  }
+
+  function renderGameDetail(rows) {
+    const container = document.querySelector("#game-detail");
+    if (!container) return;
+    const gameId = Number(container.dataset.gameId);
+    const pitcherId = Number(container.dataset.pitcherId);
+    const appearance = gameAppearances(rows).find((item) =>
+      item.gameId === gameId && item.pitcherId === pitcherId);
+    if (!appearance) {
+      showError(container, "This pitching appearance is not included in the 2025 Statcast dataset.");
+      return;
+    }
+    const types = pitchStats(appearance.rows);
+    container.innerHTML = `
+      <p class="eyebrow eyebrow-dark">2025 GAME APPEARANCE</p>
+      <h1 class="game-detail-title">${escapeHtml(appearance.pitcher)}</h1>
+      <p class="game-detail-subtitle">${escapeHtml(appearance.date)} · ${appearance.venue} vs. ${escapeHtml(teamNames[appearance.opponent] || appearance.opponent)}</p>
+      <p class="game-log-context">Role: ${appearance.role} (inferred from tracked appearance order). Innings are estimated from recorded plate-appearance outs; baserunning outs may be missing.</p>
+      <div class="summary-grid game-detail-stats">
+        ${[
+          ["Estimated IP", appearance.innings], ["Pitches", appearance.pitchCount],
+          ["Strikeouts", appearance.strikeouts], ["Hits", appearance.hits],
+          ["Walks + HBP", appearance.walks], ["Avg. velocity", `${format(appearance.averageVelocity)} mph`],
+          ["Opponent AVG", appearance.average === null ? "—" : appearance.average.toFixed(3).replace(/^0/, "")],
+          ["Opponent SLG", appearance.slugging === null ? "—" : appearance.slugging.toFixed(3).replace(/^0/, "")]
+        ].map(([label, value]) => `<div class="summary-card"><span>${label}</span><strong>${value}</strong></div>`).join("")}
+      </div>
+      <section class="panel content-section game-detail-arsenal">
+        <p class="eyebrow eyebrow-dark">PITCH MIX</p><h2>Arsenal in this appearance</h2>
+        <div class="table-wrap">${pitchTable(types)}</div>
+      </section>
+      <p class="table-note">ERA, earned runs and decisions are not available in the pitch dataset. IP and role are estimates; baserunning outs may be missing.</p>`;
+  }
+
+  const glossaryTerms = [
+    { term: "Strikeout", category: "Results", definition: "A plate appearance that ends with the batter striking out. The app counts this from the terminal pitch’s event.", interpretation: "More strikeouts mean more plate appearances ended this way—not necessarily a lower run total.", related: ["Strikeout rate", "Whiff rate"], start: true },
+    { term: "Strikeout rate", category: "Results", definition: "Strikeouts divided by completed plate appearances ending with the selected pitch type.", interpretation: "Higher means a larger share of those tracked completed plate appearances ended in a strikeout. Check the number of completed plate appearances.", related: ["Strikeout", "Sample size"] },
+    { term: "Whiff rate", category: "Pitch Quality", definition: "Tracked swings that miss divided by tracked swings for a pitch type.", interpretation: "Higher means more swings missed in this dataset. Always check the swing sample size.", related: ["Swing", "Sample size"], start: true, visual: "whiff" },
+    { term: "Pitch movement", category: "Pitch Movement", definition: "Statcast movement values (pfx_x and pfx_z) describe horizontal and vertical pitch movement in the source coordinate system.", interpretation: "Movement is directional: positive and negative values indicate opposite directions. Compare like-handed perspectives and pitch types.", related: ["Horizontal movement", "Vertical movement"], start: true, visual: "movement" },
+    { term: "Strike zone", category: "Pitch Movement", definition: "The dashboard’s approximate zone rectangle used to orient plate-location plots.", interpretation: "It is a visual reference, not a called-strike probability or umpire-specific zone.", related: ["Plate location"], visual: "zone" },
+    { term: "Plate location", category: "Pitch Movement", definition: "The recorded horizontal and vertical location where a pitch crossed the plate, shown in feet.", interpretation: "Use batter handedness when comparing location patterns.", related: ["Strike zone", "Batter handedness"] },
+    { term: "Release velocity", category: "Pitch Quality", definition: "The pitch’s recorded release speed, displayed in miles per hour.", interpretation: "Higher means faster release speed; compare the same pitch type and similar samples.", related: ["Spin rate", "Sample size"] },
+    { term: "Spin rate", category: "Pitch Quality", definition: "The recorded rotation rate of a pitch, displayed in revolutions per minute (rpm).", interpretation: "Higher is not automatically better; its effect depends on pitch type, movement and location.", related: ["Pitch movement"] },
+    { term: "Opponent batting average", category: "Results", definition: "Hits divided by at-bats for tracked completed plate appearances ending on the selected pitch type.", interpretation: "Lower means fewer hits per at-bat in the available sample. Walks and some sacrifices aren’t at-bats.", related: ["Opponent slugging", "Sample size"] },
+    { term: "Opponent slugging", category: "Results", definition: "Total bases divided by at-bats for tracked completed plate appearances ending on the selected pitch type.", interpretation: "Lower means fewer total bases per at-bat in the sample.", related: ["Opponent batting average", "Sample size"] },
+    { term: "Usage", category: "Usage", definition: "The share of a pitcher’s tracked pitches that are a given pitch type.", interpretation: "Higher means the pitch was thrown more often in this data—not that it was more effective.", related: ["Pitch count", "Sample size"] },
+    { term: "Pitch count", category: "Usage", definition: "The number of tracked pitches thrown by a pitcher or of a given pitch type.", interpretation: "Larger samples generally make observed rates more stable, but do not eliminate context.", related: ["Usage", "Sample size"] },
+    { term: "Sample size", category: "Usage", definition: "The number of tracked pitches, swings, or completed at-bats behind a displayed metric.", interpretation: "Small samples can produce volatile rates. Check the denominator before comparing.", related: ["Whiff rate", "Opponent batting average"] },
+    { term: "Batter handedness", category: "Usage", definition: "Whether the batter is recorded as right-handed (R) or left-handed (L).", interpretation: "Location and outcomes can differ by matchup; use the handedness filters to separate them.", related: ["Plate location"] },
+    { term: "Swing", category: "Pitch Quality", definition: "A tracked swing at a pitch. The dashboard identifies swing and miss events from the pitch description.", interpretation: "Whiff rate uses tracked swings as its denominator.", related: ["Whiff rate", "Sample size"] },
+    { term: "Innings pitched (estimated)", category: "Usage", definition: "The Game Log estimates innings from recorded outs, showing each out as one third of an inning.", interpretation: "This is derived from available pitch events and may differ from an official box score.", related: ["Strikeout"] },
+    { term: "Starter / reliever (inferred)", category: "Usage", definition: "The Game Log labels the first Phillies pitcher appearing in tracked game data as the starter; subsequent pitchers are relievers.", interpretation: "This is an appearance-order inference because the payload doesn’t include an explicit role field.", related: ["Pitch count", "Innings pitched (estimated)"] }
+  ];
+
+  function glossaryVisual(visual) {
+    if (visual === "whiff") return `<div class="glossary-mini-whiff" aria-label="Illustration of a swing missing a pitch"><span>BAT</span><i></i><b></b><small>miss</small></div>`;
+    if (visual === "movement") return `<div class="glossary-mini-movement" aria-label="Illustration of horizontal and vertical pitch movement"><span>·</span><i>↗</i><small>H movement</small><b>V movement</b></div>`;
+    if (visual === "zone") return `<div class="glossary-mini-zone" aria-label="Illustration of the approximate strike zone"><i></i><span>PLATE</span></div>`;
+    return "";
+  }
+
+  function renderGlossary() {
+    const featured = document.querySelector("#glossary-featured");
+    const categoryContainer = document.querySelector("#glossary-categories");
+    const results = document.querySelector("#glossary-results");
+    if (!featured || !categoryContainer || !results) return;
+    const categories = ["All terms", ...new Set(glossaryTerms.map((item) => item.category))];
+    let activeCategory = "All terms";
+    featured.innerHTML = glossaryTerms.filter((item) => item.start).map((item) =>
+      `<a class="glossary-feature-card" href="#term-${encodeURIComponent(item.term.toLowerCase().replaceAll(" ", "-"))}">
+        <span>${item.category}</span><strong>${escapeHtml(item.term)}</strong><small>${escapeHtml(item.definition)}</small>
+        ${glossaryVisual(item.visual)}
+      </a>`
+    ).join("");
+
+    categoryContainer.innerHTML = categories.map((category, index) =>
+      `<button class="category-chip${index === 0 ? " is-active" : ""}" type="button" aria-pressed="${index === 0}" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`
+    ).join("");
+
+    const search = document.querySelector("#glossary-search");
+    const renderResults = () => {
+      const query = search.value.trim().toLowerCase();
+      const filtered = glossaryTerms.filter((item) =>
+        (activeCategory === "All terms" || item.category === activeCategory) &&
+        (!query || `${item.term} ${item.definition} ${item.interpretation} ${item.related.join(" ")}`.toLowerCase().includes(query))
+      );
+      results.innerHTML = filtered.length ? filtered.map((item) => {
+        const id = item.term.toLowerCase().replaceAll(" ", "-");
+        const related = item.related.map((term) => {
+          const relatedItem = glossaryTerms.find((entry) => entry.term === term);
+          return relatedItem
+            ? `<a href="#term-${encodeURIComponent(relatedItem.term.toLowerCase().replaceAll(" ", "-"))}">${escapeHtml(term)}</a>`
+            : escapeHtml(term);
+        }).join(" · ");
+        return `<details class="glossary-term" id="term-${encodeURIComponent(id)}">
+          <summary><span class="glossary-category">${escapeHtml(item.category)}</span><strong>${escapeHtml(item.term)}</strong><span class="glossary-expand" aria-hidden="true">+</span></summary>
+          <div class="glossary-definition"><p>${escapeHtml(item.definition)}</p>
+            ${item.interpretation ? `<p class="glossary-interpretation"><strong>How to read it</strong> ${escapeHtml(item.interpretation)}</p>` : ""}
+            ${item.visual ? glossaryVisual(item.visual) : ""}
+            <p class="glossary-related"><strong>Related:</strong> ${related}</p>
+          </div>
+        </details>`;
+      }).join("") : `<p class="empty-message">No terms match your search. Try another word or category.</p>`;
+    };
+    categoryContainer.querySelectorAll("button").forEach((button) => {
+      button.addEventListener("click", () => {
+        activeCategory = button.dataset.category;
+        categoryContainer.querySelectorAll("button").forEach((chip) => {
+          const active = chip === button;
+          chip.classList.toggle("is-active", active);
+          chip.setAttribute("aria-pressed", String(active));
+        });
+        renderResults();
+      });
+    });
+    search.addEventListener("input", renderResults);
+    renderResults();
+  }
+
   async function start() {
+    renderGlossary();
     if (!dataUrl) return;
     try {
       const response = await fetch(dataUrl);
@@ -891,16 +1162,21 @@
       renderComparison(rows);
       renderOpponentList(rows);
       renderOpponentAnalysis(rows);
+      renderGameLog(rows);
+      renderGameDetail(rows);
     } catch (error) {
       const message = error instanceof Error ? error.message : "The pitch data could not be loaded.";
       for (const selector of [
         "#home-pitchers", "#all-pitchers", "#pitcher-profile", "#comparison-summary",
         "#comparison-movement", "#comparison-trends", "#comparison-location-right",
-        "#comparison-location-left", "#comparison-takeaway", "#opponent-list", "#opponent-chart"
+        "#comparison-location-left", "#comparison-takeaway", "#opponent-list", "#opponent-chart",
+        "#game-log-table", "#game-detail"
       ]) {
         const element = document.querySelector(selector);
         if (element) showError(element, message);
       }
+      const gameLogStatus = document.querySelector("#game-log-status");
+      if (gameLogStatus) gameLogStatus.textContent = message;
     }
   }
 

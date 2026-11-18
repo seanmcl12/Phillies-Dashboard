@@ -37,6 +37,23 @@ def pitch_comparison() -> str:
     return _render_data_page("pitch_performance.html")
 
 
+@app.get("/game-log")
+def game_log() -> str:
+    return _render_data_page("game_log.html")
+
+
+@app.get("/game-log/<int:game_pk>/<int:pitcher_id>")
+def game_log_detail(game_pk: int, pitcher_id: int) -> str:
+    return _render_data_page(
+        "game_detail.html", game_pk=game_pk, pitcher_id=pitcher_id
+    )
+
+
+@app.get("/glossary")
+def glossary() -> str:
+    return _render_data_page("glossary.html")
+
+
 @app.get("/pitch-performance")
 def pitch_performance() -> str:
     return redirect(url_for("pitch_comparison"))

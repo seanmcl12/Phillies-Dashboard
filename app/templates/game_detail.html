@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Game Appearance | Phillies Pitching Lab{% endblock %}
+
+{% block content %}
+<section class="section-shell content-section">
+  <a class="back-link" href="{{ url_for('game_log') }}">← Game log</a>
+  <div id="game-detail" data-game-id="{{ game_pk }}" data-pitcher-id="{{ pitcher_id }}">
+    <p class="loading-message">Loading appearance details…</p>
+  </div>
+</section>
+{% endblock %}

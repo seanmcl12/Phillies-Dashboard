@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Pitching Glossary | Phillies Pitching Lab{% endblock %}
+
+{% block content %}
+<section class="glossary-hero">
+  <div class="section-shell glossary-hero-inner">
+    <p class="eyebrow">THE PITCHING FIELD GUIDE</p>
+    <h1>Read the pitch.<br><span>Know the signal.</span></h1>
+    <p>A practical reference to the stats, outcomes and movement measures used across this dashboard.</p>
+    <a class="button button-light" href="#glossary-library">Explore the terms <span aria-hidden="true">↓</span></a>
+    <div class="glossary-hero-art" aria-hidden="true"><span>↗</span><i></i><b></b></div>
+  </div>
+</section>
+
+<section class="section-shell glossary-start" aria-labelledby="start-here-title">
+  <div class="section-heading compact-heading">
+    <div><p class="eyebrow eyebrow-dark">A GOOD PLACE TO BEGIN</p><h2 id="start-here-title">Start here</h2></div>
+  </div>
+  <div class="glossary-featured" id="glossary-featured"></div>
+</section>
+
+<section class="section-shell content-section glossary-library" id="glossary-library">
+  <div class="section-heading">
+    <div><p class="eyebrow eyebrow-dark">REFERENCE LIBRARY</p><h2>Find your term</h2></div>
+  </div>
+  <div class="glossary-controls">
+    <label class="glossary-search-label" for="glossary-search">Search terms
+      <input id="glossary-search" type="search" placeholder="Search a stat, outcome, or pitch…" autocomplete="off">
+    </label>
+    <div class="glossary-category-list" id="glossary-categories" aria-label="Filter by category"></div>
+  </div>
+  <div id="glossary-results" class="glossary-grid" aria-live="polite"></div>
+</section>
+{% endblock %}

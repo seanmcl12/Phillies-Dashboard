@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Phillies Game Log | Phillies Pitching Lab{% endblock %}
+
+{% block content %}
+<section class="page-heading section-shell">
+  <p class="eyebrow eyebrow-dark">2025 REGULAR SEASON</p>
+  <h1>Pitching game log</h1>
+  <p>Browse Phillies pitching appearances and the game-level results supported by the available Statcast data.</p>
+</section>
+<section class="section-shell content-section game-log-page">
+  <form class="game-log-filters panel" id="game-log-filters" aria-label="Filter game log">
+    <label>Pitcher
+      <select id="game-filter-pitcher"><option value="all">All pitchers</option></select>
+    </label>
+    <label>Opponent
+      <select id="game-filter-opponent"><option value="all">All opponents</option></select>
+    </label>
+    <label>Role
+      <select id="game-filter-role">
+        <option value="all">All roles</option>
+        <option value="starter">Starter (inferred)</option>
+        <option value="reliever">Reliever</option>
+      </select>
+    </label>
+    <label>Season
+      <select id="game-filter-season"><option value="2025">2025 regular season</option></select>
+    </label>
+    <label>From date
+      <input id="game-filter-from" type="date">
+    </label>
+    <label>To date
+      <input id="game-filter-to" type="date">
+    </label>
+    <button class="button game-filter-reset" type="reset">Clear filters</button>
+  </form>
+  <div class="game-log-context">
+    <p>Starter/reliever role is inferred from which Phillies pitcher appeared first in the tracked game data. Innings are estimated from recorded plate-appearance outs; baserunning outs may be missing.</p>
+    <p>Earned runs, official ERA, decisions and exact innings aren’t present in the source dataset.</p>
+  </div>
+  <div id="game-log-status" class="game-log-status" role="status" aria-live="polite">Loading game log…</div>
+  <div class="table-wrap game-log-table-wrap" id="game-log-table"></div>
+</section>
+{% endblock %}
