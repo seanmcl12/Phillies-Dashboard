@@ -95,7 +95,7 @@ button, select { font: inherit; }
 .pitcher-card { position: relative; display: flex; min-width: 0; min-height: 185px; overflow: hidden; align-items: center; gap: 18px; padding: 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: 0 5px 18px rgb(26 35 45 / 5%); text-decoration: none; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
 .pitcher-card:hover { border-color: var(--accent-blue); box-shadow: var(--shadow); transform: translateY(-3px); }
 .pitcher-photo-wrap { display: grid; flex: 0 0 118px; width: 118px; height: 145px; place-items: center; overflow: hidden; border-radius: 6px; background: #e6f2fb; }
-.pitcher-photo { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.pitcher-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 .photo-fallback { display: grid; width: 100%; height: 100%; place-items: center; color: var(--accent); font-size: 1.5rem; font-weight: 850; }
 .photo-fallback[hidden] { display: none; }
 .pitcher-card-copy { min-width: 0; padding-right: 14px; }
@@ -103,12 +103,12 @@ button, select { font: inherit; }
 .pitcher-card h3 { margin: 7px 0 8px; overflow-wrap: anywhere; color: var(--accent-dark); font-size: 1.18rem; line-height: 1.15; }
 .pitcher-card p { margin: 0; color: var(--muted-text); font-size: .82rem; line-height: 1.45; }
 .card-arrow { position: absolute; top: 13px; right: 14px; color: var(--accent-blue); font-size: 1.1rem; font-weight: 850; }
-.showcase-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-top: 7px solid #E81828; border-radius: 9px; background: white; box-shadow: 0 8px 26px rgb(26 35 45 / 7%); }
+.showcase-card { display: flex; width: 100%; height: 100%; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-top: 7px solid #E81828; border-radius: 9px; background: white; box-shadow: 0 8px 26px rgb(26 35 45 / 7%); }
 .showcase-card:hover { border-color: #E81828; box-shadow: var(--shadow); transform: translateY(-3px); }
 .showcase-card-main { display: block; min-width: 0; padding: 18px 18px 12px; color: inherit; text-decoration: none; }
 .showcase-player { position: relative; display: flex; min-height: 84px; align-items: center; gap: 13px; padding-right: 60px; }
-.showcase-photo-wrap { display: grid; flex: 0 0 68px; width: 68px; height: 74px; place-items: center; overflow: hidden; border-radius: 7px; background: #f0eff0; }
-.showcase-photo { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.showcase-photo-wrap { display: grid; flex: 0 0 82px; width: 82px; height: 96px; place-items: center; overflow: hidden; border-radius: 7px; background: #f0eff0; }
+.showcase-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
 .showcase-photo-fallback { color: #E81828; font-size: 1.1rem; }
 .showcase-player-copy { min-width: 0; }
 .showcase-player-copy .pitcher-card-kicker { font-size: .56rem; }
@@ -149,8 +149,8 @@ button, select { font: inherit; }
 .page-heading + .content-section { padding-top: 15px; }
 .back-link { display: inline-block; margin-bottom: 30px; }
 .profile-header { display: flex; align-items: center; gap: 28px; margin-bottom: 32px; }
-.profile-photo { width: 150px; height: 170px; object-fit: cover; object-position: center top; border-radius: 8px; background: #e6f2fb; }
-.profile-fallback { flex: 0 0 150px; height: 170px; border-radius: 8px; background: #e6f2fb; font-size: 2.5rem; }
+.profile-photo { width: 150px; height: 190px; object-fit: cover; object-position: center 18%; border-radius: 8px; background: #e6f2fb; }
+.profile-fallback { flex: 0 0 150px; height: 190px; border-radius: 8px; background: #e6f2fb; font-size: 2.5rem; }
 .profile-header h1 { margin: 0 0 9px; color: var(--accent-dark); font-size: clamp(2.3rem, 5vw, 3.8rem); letter-spacing: -.055em; }
 .profile-header p:not(.eyebrow) { margin: 0 0 15px; color: var(--muted-text); }
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-block: 26px; }
@@ -181,7 +181,7 @@ button, select { font: inherit; }
 .sample-warning { display: block; width: fit-content; margin-top: 4px; padding: 2px 5px; border-radius: 3px; color: #875500; background: #fff3d4; font-size: .62rem; font-weight: 800; text-transform: uppercase; }
 .comparison-chart-grid { margin-bottom: 22px; }
 .comparison-chart-grid > .panel { min-width: 0; }
-.comparison-svg { min-width: 600px; }
+.comparison-svg { min-width: 0; }
 .location-comparison-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .location-hand-heading { margin: 8px 0 0; color: var(--accent-dark); font-size: .88rem; }
 .trend-metric-label { display: block; margin-top: 14px; color: var(--muted-text); font-size: .78rem; font-weight: 750; }
@@ -269,7 +269,8 @@ select:focus-visible, a:focus-visible { outline: 3px solid var(--accent-blue); o
 .chart-panel h2, .panel > h2 { margin-top: 0; font-size: 1.55rem; }
 .chart-description { margin: 8px 0 0; color: var(--muted-text); font-size: .85rem; line-height: 1.5; }
 .chart-frame { min-width: 0; margin-top: 20px; overflow-x: auto; }
-.chart-svg { display: block; width: 100%; min-width: 430px; height: auto; overflow: visible; }
+.chart-svg { display: block; width: 100%; min-width: 0; height: auto; overflow: visible; }
+.location-svg { max-width: 620px; margin-inline: auto; }
 .chart-gridline { stroke: #e8ebef; stroke-width: 1; }
 .chart-value { fill: var(--text); font-size: 11px; font-weight: 750; }
 .chart-label { fill: var(--muted-text); font-size: 12px; font-weight: 750; }
@@ -298,7 +299,7 @@ tbody th { color: var(--accent-dark); }
 .snapshot-stat { color: var(--accent-dark); font-size: 2.55rem; line-height: 1; letter-spacing: -.04em; }
 .snapshot-meta { margin: 7px 0 0; color: var(--muted-text); font-size: .68rem; }
 .snapshot-person { position: relative; width: 82px; height: 82px; overflow: hidden; border-radius: 50%; background: #f0e5e8; }
-.snapshot-person img { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.snapshot-person img { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 .snapshot-person span { position: absolute; right: 15px; bottom: 7px; display: grid; width: 29px; height: 29px; border-radius: 50%; place-items: center; color: white; background: #cf3557; font-weight: 900; }
 .snapshot-person-name { display: grid; gap: 2px; margin-top: 9px; padding-top: 11px; border-top: 1px solid #eceff2; }
 .snapshot-person-name strong { color: var(--accent-dark); font-size: 1rem; }
@@ -331,7 +332,7 @@ tbody th { color: var(--accent-dark); }
 .batter-card-main { padding: 15px 16px 12px; }
 .batter-card-player { position: relative; display: flex; min-height: 66px; align-items: center; gap: 12px; padding-right: 66px; }
 .batter-card-photo-wrap { display: grid; flex: 0 0 58px; width: 58px; height: 62px; place-items: center; overflow: hidden; border-radius: 6px; background: #f0eff0; }
-.batter-card-photo-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.batter-card-photo-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
 .batter-card-fallback { color: var(--accent); font-size: 1rem; }
 .batter-card-name { min-width: 0; }
 .batter-card-kicker { color: var(--accent); font-size: .59rem; font-weight: 850; letter-spacing: .13em; }
@@ -421,9 +422,10 @@ tbody th { color: var(--accent-dark); }
   .clip-form { grid-template-columns: 1fr; }
   .chart-grid { grid-template-columns: 1fr; }
   .profile-header { align-items: flex-start; gap: 17px; }
-  .profile-photo, .profile-fallback { flex-basis: 100px; width: 100px; height: 125px; }
+  .profile-photo, .profile-fallback { flex-basis: 110px; width: 110px; height: 140px; }
   .profile-header h1 { font-size: 2.2rem; }
   .panel { padding: 18px; }
+  .showcase-card { height: 404px; }
   .snapshot-section, .analysis-section { padding-block: 38px; }
   .snapshot-grid { grid-template-columns: 1fr; }
   .analysis-grid { grid-template-columns: 1fr; }

@@ -375,27 +375,36 @@
       number(row.plate_x) !== null && number(row.plate_z) !== null && row.pitch_type);
     if (!measured.length) return `<p class="empty-message">No plate-location measurements are available.</p>`;
     const width = 620;
-    const height = 360;
-    const left = 56;
-    const right = 20;
-    const top = 18;
-    const bottom = 44;
+    const height = 620;
+    const left = 38;
+    const right = 38;
+    const top = 38;
+    const bottom = 38;
     const plotWidth = width - left - right;
     const plotHeight = height - top - bottom;
-    const x = (value) => left + (value + 2.2) / 4.4 * plotWidth;
-    const y = (value) => top + (5.2 - value) / 4.4 * plotHeight;
+    // Statcast plate_x/plate_z are in feet. Use the same 9-foot domain and
+    // square plot area so one foot has the same horizontal and vertical scale.
+    const x = (value) => left + (value + 4.5) / 9 * plotWidth;
+    const y = (value) => top + (7.5 - value) / 9 * plotHeight;
+    const xTicks = [-4, -2, 0, 2, 4];
+    const zTicks = [-1, 1, 3, 5, 7];
+    const grid = [
+      ...xTicks.map((tick) => `<line class="chart-gridline" x1="${x(tick)}" x2="${x(tick)}" y1="${top}" y2="${height - bottom}"/><text class="chart-value" x="${x(tick)}" y="${height - 20}" text-anchor="middle">${tick}</text>`),
+      ...zTicks.map((tick) => `<line class="chart-gridline" x1="${left}" x2="${width - right}" y1="${y(tick)}" y2="${y(tick)}"/><text class="chart-value" x="${left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>`)
+    ].join("");
     const stride = Math.max(1, Math.ceil(measured.length / 650));
     const points = measured.filter((_, index) => index % stride === 0).map((row) => {
       const fill = ["FF", "SI", "FT"].includes(row.pitch_type) ? "#6bace4" : "#6f263d";
       return `<circle cx="${x(row.plate_x)}" cy="${y(row.plate_z)}" r="3.1" fill="${fill}" fill-opacity=".52"><title>${escapeHtml(pitchName(row.pitch_type))} · ${format(number(row.release_speed))} mph</title></circle>`;
     }).join("");
-    return `<svg class="chart-svg location-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Pitch locations over home plate">
-      <rect class="strike-zone" x="${x(-0.83)}" y="${y(3.5)}" width="${x(0.83) - x(-0.83)}" height="${y(1.5) - y(3.5)}"/>
+    return `<svg class="chart-svg location-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Pitch locations in feet over an accurately scaled home-plate strike-zone chart">
+      ${grid}
+      <rect class="strike-zone" x="${x(-17 / 24)}" y="${y(3.5)}" width="${x(17 / 24) - x(-17 / 24)}" height="${y(1.5) - y(3.5)}"/>
       <line class="plate-axis" x1="${left}" x2="${width - right}" y1="${y(2.5)}" y2="${y(2.5)}"/>
       <line class="plate-axis" x1="${x(0)}" x2="${x(0)}" y1="${top}" y2="${height - bottom}"/>
       ${points}
-      <text class="axis-label" x="${width / 2}" y="${height - 6}" text-anchor="middle">Horizontal location (ft)</text>
-      <text class="axis-label" transform="translate(15 ${height / 2}) rotate(-90)" text-anchor="middle">Height (ft)</text>
+      <text class="axis-label" x="${width / 2}" y="${height - 6}" text-anchor="middle">Plate X (ft)</text>
+      <text class="axis-label" transform="translate(15 ${height / 2}) rotate(-90)" text-anchor="middle">Plate Z (ft)</text>
       <g class="chart-legend"><circle cx="${width - 182}" cy="18" r="4" fill="#6f263d"/><text x="${width - 172}" y="22">Other pitch types</text>
       <circle cx="${width - 82}" cy="18" r="4" fill="#6bace4"/><text x="${width - 72}" y="22">Fastballs</text></g>
     </svg>`;
@@ -692,13 +701,19 @@
       row.stand === hand && number(row.plate_x) !== null && number(row.plate_z) !== null && row.pitch_type);
     if (!measured.length) return `<p class="empty-message">No ${hand === "R" ? "right" : "left"}-handed batter locations match these filters.</p>`;
     const width = 620;
-    const height = 360;
-    const left = 56;
-    const right = 20;
-    const top = 28;
-    const bottom = 44;
-    const x = (value) => left + (value + 2.2) / 4.4 * (width - left - right);
-    const y = (value) => top + (5.2 - value) / 4.4 * (height - top - bottom);
+    const height = 620;
+    const left = 38;
+    const right = 38;
+    const top = 38;
+    const bottom = 38;
+    const x = (value) => left + (value + 4.5) / 9 * (width - left - right);
+    const y = (value) => top + (7.5 - value) / 9 * (height - top - bottom);
+    const xTicks = [-4, -2, 0, 2, 4];
+    const zTicks = [-1, 1, 3, 5, 7];
+    const grid = [
+      ...xTicks.map((tick) => `<line class="chart-gridline" x1="${x(tick)}" x2="${x(tick)}" y1="${top}" y2="${height - bottom}"/><text class="chart-value" x="${x(tick)}" y="${height - 20}" text-anchor="middle">${tick}</text>`),
+      ...zTicks.map((tick) => `<line class="chart-gridline" x1="${left}" x2="${width - right}" y1="${y(tick)}" y2="${y(tick)}"/><text class="chart-value" x="${left - 10}" y="${y(tick) + 4}" text-anchor="end">${tick}</text>`)
+    ].join("");
     const stride = Math.max(1, Math.ceil(measured.length / 700));
     const points = measured.filter((_, index) => index % stride === 0).map((row) =>
       `<circle cx="${x(row.plate_x)}" cy="${y(row.plate_z)}" r="3" fill="${colorForPitch(row.pitch_type, pitchTypes)}" fill-opacity=".58"><title>${escapeHtml(pitchName(row.pitch_type))} · ${format(number(row.release_speed))} mph · ${hand === "R" ? "RHH" : "LHH"}</title></circle>`
@@ -706,13 +721,14 @@
     const legend = pitchTypes.slice(0, 6).map((code, index) =>
       `<g transform="translate(${left + (index % 3) * 170} ${top + 9 + Math.floor(index / 3) * 16})"><circle r="4" fill="${colorForPitch(code, pitchTypes)}"/><text class="axis-label" x="8" y="4">${escapeHtml(pitchName(code))}</text></g>`
     ).join("");
-    return `<svg class="chart-svg comparison-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Pitch locations versus ${hand === "R" ? "right" : "left"}-handed batters">
-      <rect class="strike-zone" x="${x(-0.83)}" y="${y(3.5)}" width="${x(0.83) - x(-0.83)}" height="${y(1.5) - y(3.5)}"/>
+    return `<svg class="chart-svg comparison-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Accurately scaled pitch locations versus ${hand === "R" ? "right" : "left"}-handed batters">
+      ${grid}
+      <rect class="strike-zone" x="${x(-17 / 24)}" y="${y(3.5)}" width="${x(17 / 24) - x(-17 / 24)}" height="${y(1.5) - y(3.5)}"/>
       <line class="plate-axis" x1="${left}" x2="${width - right}" y1="${y(2.5)}" y2="${y(2.5)}"/>
       <line class="plate-axis" x1="${x(0)}" x2="${x(0)}" y1="${top}" y2="${height - bottom}"/>
       ${legend}${points}
-      <text class="axis-label" x="${width / 2}" y="${height - 6}" text-anchor="middle">Horizontal plate location (ft)</text>
-      <text class="axis-label" transform="translate(15 ${height / 2}) rotate(-90)" text-anchor="middle">Height (ft)</text>
+      <text class="axis-label" x="${width / 2}" y="${height - 6}" text-anchor="middle">Plate X (ft)</text>
+      <text class="axis-label" transform="translate(15 ${height / 2}) rotate(-90)" text-anchor="middle">Plate Z (ft)</text>
     </svg>`;
   }
 
