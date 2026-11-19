@@ -222,10 +222,105 @@
     if (snapshot) {
       const pitchTypes = pitchStats(rows).filter((type) => type.whiffRate !== null && type.swings >= 30);
       const topPitch = [...pitchTypes].sort((a, b) => b.whiffRate - a.whiffRate)[0];
+      const breakdownPitchTypes = [...pitchTypes]
+        .sort((a, b) => b.swings - a.swings)
+        .slice(0, 2);
+
+      const monthly = new Map();
+      for (const pitch of terminal) {
+        if (!pitch.game_date) continue;
+        const month = String(pitch.game_date).slice(5, 7);
+        if (!monthly.has(month)) monthly.set(month, { atBats: 0, strikeouts: 0 });
+        const totals = monthly.get(month);
+        totals.atBats += 1;
+        if (pitch.events === "strikeout") totals.strikeouts += 1;
+      }
+      const monthlyRates = [...monthly.entries()]
+        .sort(([monthA], [monthB]) => monthA.localeCompare(monthB))
+        .map(([month, totals]) => ({
+          month,
+          rate: totals.atBats ? totals.strikeouts / totals.atBats * 100 : 0
+        }))
+        .slice(-5);
+      const chartWidth = 260;
+      const chartHeight = 66;
+      const chartPoints = monthlyRates.map((item, index) => {
+        const x = monthlyRates.length === 1 ? chartWidth / 2 : index * chartWidth / (monthlyRates.length - 1);
+        const values = monthlyRates.map((entry) => entry.rate);
+        const min = Math.min(...values) - 2;
+        const max = Math.max(...values) + 2;
+        const y = chartHeight - ((item.rate - min) / (max - min || 1)) * chartHeight;
+        return { ...item, x, y };
+      });
+      const chartPolyline = chartPoints.map((point) => `${point.x},${point.y}`).join(" ");
+      const monthLabel = (month) => ({
+        "03": "MAR", "04": "APR", "05": "MAY", "06": "JUN",
+        "07": "JUL", "08": "AUG", "09": "SEP", "10": "OCT"
+      }[month] || month);
+
       const cards = [
-        strikeoutLeader ? `<article class="snapshot-card"><span class="snapshot-stat">${strikeoutLeader.strikeouts}</span><h3>${escapeHtml(strikeoutLeader.pitcher.name)} strikeout leader</h3><p>Strikeouts ending completed plate appearances in the 2025 pitch data.</p></article>` : null,
-        topPitch ? `<article class="snapshot-card"><span class="snapshot-stat">${format(topPitch.whiffRate)}%</span><h3>${escapeHtml(pitchName(topPitch.code))} whiff rate</h3><p>Based on ${topPitch.swings.toLocaleString()} tracked swings.</p></article>` : null,
-        `<article class="snapshot-card"><span class="snapshot-stat">${format(strikeoutRate)}%</span><h3>Plate appearance strikeout rate</h3><p>${strikeouts.toLocaleString()} strikeouts across ${terminal.length.toLocaleString()} completed plate appearances.</p></article>`
+        strikeoutLeader ? `
+          <article class="snapshot-card snapshot-leader">
+            <p class="snapshot-kicker"><span aria-hidden="true">✦</span> Staff leader</p>
+            <div class="snapshot-main">
+              <div>
+                <p class="snapshot-label">Strikeouts</p>
+                <strong class="snapshot-stat">${strikeoutLeader.strikeouts}</strong>
+                <p class="snapshot-meta">2025 season total</p>
+              </div>
+              <div class="snapshot-person" aria-label="${escapeHtml(strikeoutLeader.pitcher.name)}">
+                <img src="${playerPhoto(strikeoutLeader.pitcher.id)}" alt="">
+                <span>P</span>
+              </div>
+            </div>
+            <div class="snapshot-person-name">
+              <strong>${escapeHtml(displayPlayerName(strikeoutLeader.pitcher.name))}</strong>
+              <span>Pitcher</span>
+            </div>
+            <div class="snapshot-ranking">
+              <div class="snapshot-ranking-head"><span>Team ranking</span><span>#1 team leader</span></div>
+              <div class="snapshot-progress"><span></span></div>
+            </div>
+          </article>` : null,
+        topPitch ? `
+          <article class="snapshot-card snapshot-whiff">
+            <p class="snapshot-kicker"><span aria-hidden="true"></span> Pitch quality</p>
+            <div class="snapshot-main snapshot-whiff-main">
+              <div>
+                <p class="snapshot-label">Whiff rate</p>
+                <strong class="snapshot-stat">${format(whiffRate)}%</strong>
+                <p class="snapshot-meta">staff rate · ${swings.toLocaleString()} tracked swings</p>
+              </div>
+              <div class="snapshot-ring" style="--ring-value:${Math.min(100, whiffRate || 0)}">
+                <span>${format(whiffRate, 0)}%</span>
+              </div>
+            </div>
+            <div class="snapshot-breakdown">
+              <p>By pitch type</p>
+              ${breakdownPitchTypes.map((type) => `
+                <div class="snapshot-type">
+                  <span>${escapeHtml(pitchName(type.code))}</span>
+                  <div><i style="width:${Math.round(type.whiffRate)}%"></i></div>
+                  <strong>${format(type.whiffRate)}%</strong>
+                </div>`).join("")}
+            </div>
+            <a class="snapshot-link" href="/pitch-comparison">Explore pitch quality →</a>
+          </article>` : null,
+        `<article class="snapshot-card snapshot-performance">
+          <p class="snapshot-kicker"><span aria-hidden="true"></span> Staff performance</p>
+          <p class="snapshot-label">Strikeout rate</p>
+          <strong class="snapshot-stat">${format(strikeoutRate)}%</strong>
+          <p class="snapshot-meta">team K% · ${terminal.length.toLocaleString()} batter outcomes</p>
+          ${monthlyRates.length ? `
+            <div class="snapshot-chart" aria-label="Monthly strikeout rate trend">
+              <svg viewBox="0 0 ${chartWidth} ${chartHeight}" role="img">
+                <polyline points="${chartPolyline}" fill="none" stroke="#e9a23a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                ${chartPoints.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="4" fill="#e9a23a"></circle>`).join("")}
+              </svg>
+              <div class="snapshot-chart-months">${monthlyRates.map((item) => `<span>${monthLabel(item.month)}</span>`).join("")}</div>
+            </div>` : ""}
+          <a class="snapshot-link" href="/pitchers">View staff trends →</a>
+        </article>`
       ].filter(Boolean);
       snapshot.innerHTML = cards.join("");
     }
